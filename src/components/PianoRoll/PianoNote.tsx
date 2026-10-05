@@ -1,6 +1,8 @@
 import type { PointerEvent } from "react";
 import type { NoteEvent } from "../../music/types";
 import { noteName as midiNoteName } from "../../music/noteNames";
+import type { VoiceRole } from "../../voices/types";
+import { VOICE_LABELS, VOICE_NAMES } from "../../voices/types";
 export function PianoNote({
   note,
   selected,
@@ -13,6 +15,7 @@ export function PianoNote({
   onPointerUp,
   onPointerCancel,
   onSelect,
+  voice,
 }: {
   note: NoteEvent;
   selected: boolean;
@@ -28,16 +31,19 @@ export function PianoNote({
   onPointerUp: (event: PointerEvent<HTMLButtonElement>) => void;
   onPointerCancel: () => void;
   onSelect: () => void;
+  voice?: VoiceRole;
 }) {
   return (
     <button
-      className={`pr-note ${selected ? "selected" : ""} ${manual ? "manual" : ""} ${edited ? "edited" : ""}`}
+      className={`pr-note ${selected ? "selected" : ""} ${manual ? "manual" : ""} ${edited ? "edited" : ""} ${voice ? `voice-colored voice-${voice}` : ""}`}
+      data-voice={voice}
       data-note-id={note.id}
       data-midi={note.midi}
       data-start={note.start}
       data-duration={note.duration}
       data-confidence={note.confidence}
-      aria-label={`${midiNoteName(note.midi)}, 시작 ${note.start.toFixed(3)}초, 길이 ${note.duration.toFixed(3)}초${manual ? ", 직접 추가" : ""}`}
+      data-velocity={note.velocity}
+      aria-label={`${midiNoteName(note.midi)}, 시작 ${note.start.toFixed(3)}초, 길이 ${note.duration.toFixed(3)}초${manual ? ", 직접 추가" : ""}${voice ? `, ${VOICE_NAMES[voice]}` : ""}`}
       aria-pressed={selected}
       style={{
         left: note.start * zoom,
@@ -53,7 +59,10 @@ export function PianoNote({
       onPointerCancel={onPointerCancel}
     >
       <span className="pr-resize left" data-edge="left" aria-hidden="true" />
-      <span className="pr-note-name">{midiNoteName(note.midi)}</span>
+      <span className="pr-note-name">
+        {voice ? `${VOICE_LABELS[voice]} · ` : ""}
+        {midiNoteName(note.midi)}
+      </span>
       <span className="pr-resize right" data-edge="right" aria-hidden="true" />
     </button>
   );

@@ -51,6 +51,7 @@ export interface NwcReport {
   warnings: string[];
 }
 export interface NwcDocument {
+  voiceMode?: "satb";
   title: string;
   bpm: number;
   tempoBase: "Quarter" | "Quarter Dotted";

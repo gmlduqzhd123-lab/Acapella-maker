@@ -11,6 +11,9 @@ import { accidentalPitch } from "./pitch.ts";
 import { decomposeDuration } from "./durations.ts";
 import { serializeNwc } from "./serializer.ts";
 import { validateNwctxt } from "./validator.ts";
+import type { VoiceExport } from "../../voices/exportVoices";
+import { prepareVoiceExport, SATB_CLEFS } from "../../voices/exportVoices.ts";
+import { VOICE_NAMES } from "../../voices/types.ts";
 import type {
   NwcDocument,
   NwcEvent,
@@ -19,10 +22,34 @@ import type {
   NwcStaff,
 } from "./types";
 
-export function buildNwcDocument(snapshot: ExportSnapshot): NwcDocument {
+export function buildNwcDocument(
+  snapshot: ExportSnapshot,
+  voices?: VoiceExport,
+): NwcDocument {
   validateExportSnapshot(snapshot);
+  const satb = voices ? prepareVoiceExport(snapshot, voices) : null;
+  if (satb) snapshot = satb.snapshot;
   const key = keySignature(snapshot.key),
-    lanes = partitionLanes(snapshot.quantization.notes, key);
+    lanes = satb
+      ? satb.groups.map((group) => ({
+          name: VOICE_NAMES[group.role],
+          clef: SATB_CLEFS[group.role],
+          events: snapshot.quantization.notes
+            .filter((n) => satb.map.map[n.id].voice === group.role)
+            .map((n) => ({
+              id: n.id,
+              startTick: n.startTick,
+              durationTicks: n.durationTicks,
+              notes: [n],
+            }))
+            .sort(
+              (a, b) =>
+                a.startTick - b.startTick ||
+                a.notes[0].midi - b.notes[0].midi ||
+                a.id.localeCompare(b.id),
+            ),
+        }))
+      : partitionLanes(snapshot.quantization.notes, key);
   const length = measureTicks(snapshot.timeSignature);
   const start = Math.min(
     0,
@@ -116,7 +143,12 @@ export function buildNwcDocument(snapshot: ExportSnapshot): NwcDocument {
   warnings.push(
     "NWCTXT Beta: 실제 NoteWorthy Composer에서 악보와 재생을 수동 확인해 주세요.",
   );
+  if (satb?.omitted)
+    warnings.push(
+      `사용자 선택에 따라 미분류 음표 ${satb.omitted}개를 제외했습니다.`,
+    );
   return {
+    ...(satb ? { voiceMode: "satb" as const } : {}),
     title: snapshot.title,
     bpm: snapshot.bpm,
     tempoBase:
@@ -138,10 +170,16 @@ export function buildNwcDocument(snapshot: ExportSnapshot): NwcDocument {
     },
   };
 }
-export function exportNwctxt(snapshot: ExportSnapshot) {
-  const document = buildNwcDocument(snapshot);
+export function exportNwctxt(snapshot: ExportSnapshot, voices?: VoiceExport) {
+  const document = buildNwcDocument(snapshot, voices);
   const text = serializeNwc(document);
-  const validation = validateNwctxt(text, document, snapshot);
+  const satb = voices ? prepareVoiceExport(snapshot, voices) : null;
+  const validation = validateNwctxt(
+    text,
+    document,
+    satb?.snapshot ?? snapshot,
+    satb?.map,
+  );
   if (!validation.valid)
     throw new Error(
       `NWC 내보내기 검증 실패: ${validation.errors.slice(0, 3).join(" / ")}`,

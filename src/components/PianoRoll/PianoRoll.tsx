@@ -21,6 +21,9 @@ import { useBeatMarks } from "../../quantization/useBeatMarks";
 import { snapEditingNote } from "../../quantization/snapEdit";
 import { RESOLUTION_TICKS } from "../../quantization/grid";
 import { secondsPerQuarter } from "../../quantization/timeConversion";
+import type { VoiceController } from "../../voices/useVoices";
+import type { VoiceRole } from "../../voices/types";
+import { VoicePanel } from "../voices/VoicePanel";
 const KEYS = 64,
   HEADER = 32;
 interface Gesture {
@@ -39,6 +42,8 @@ export function PianoRoll({
   playing,
   seek,
   rhythm,
+  voices,
+  stopOriginal,
 }: {
   editor: NoteEditor;
   disabled: boolean;
@@ -46,6 +51,8 @@ export function PianoRoll({
   playing: boolean;
   seek: (time: number) => void;
   rhythm: RhythmController;
+  voices: VoiceController;
+  stopOriginal: () => void;
 }) {
   const viewport = useRef<HTMLDivElement>(null);
   const world = useRef<HTMLDivElement>(null);
@@ -55,6 +62,7 @@ export function PianoRoll({
   const [rowHeight, setRowHeight] = useState(24);
   const [add, setAdd] = useState(false);
   const [filter, setFilter] = useState(1.01);
+  const [voiceFilter, setVoiceFilter] = useState<VoiceRole | "all">("all");
   const [follow, setFollow] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [view, setView] = useState({
@@ -149,6 +157,9 @@ export function PianoRoll({
       editor.notes.filter((note) => {
         const y = (127 - note.midi) * rowHeight;
         return (
+          (!voices.result ||
+            voiceFilter === "all" ||
+            voices.map[note.id]?.voice === voiceFilter) &&
           (editor.metadata[note.id]?.origin === "manual" ||
             note.confidence < filter) &&
           (note.id === editor.selectedNoteId ||
@@ -166,6 +177,9 @@ export function PianoRoll({
       view,
       zoom,
       rowHeight,
+      voices.result,
+      voices.map,
+      voiceFilter,
     ],
   );
   const rows = Array.from({ length: 128 }, (_, i) => 127 - i).filter(
@@ -329,6 +343,32 @@ export function PianoRoll({
         duration={editor.duration}
         disabled={disabled}
       />
+      <VoicePanel
+        voices={voices}
+        editor={editor}
+        filter={voiceFilter}
+        setFilter={setVoiceFilter}
+        seek={(time, noteId) => {
+          seek(time);
+          const element = viewport.current,
+            note = editor.notes.find((n) => n.id === noteId);
+          if (element) {
+            element.scrollLeft = Math.max(
+              0,
+              KEYS + time * zoom - element.clientWidth * 0.4,
+            );
+            if (note)
+              element.scrollTop = Math.max(
+                0,
+                (127 - note.midi) * rowHeight - element.clientHeight / 2,
+              );
+            refreshView();
+          }
+        }}
+        currentTime={currentTime}
+        stopOriginal={stopOriginal}
+        disabled={disabled}
+      />
       <p className="pr-help">
         초 단위 자유 편집 · 음표를 드래그해 이동 · 양쪽 끝에서 길이 조절 ·{" "}
         {add
@@ -467,6 +507,7 @@ export function PianoRoll({
               const metadata = editor.metadata[note.id];
               return (
                 <PianoNote
+                  voice={voices.map[note.id]?.voice}
                   key={note.id}
                   note={note}
                   selected={editor.selectedNoteId === note.id}
@@ -496,7 +537,7 @@ export function PianoRoll({
           </div>
         </div>
       </div>
-      <NoteInspector editor={editor} disabled={disabled} />
+      <NoteInspector editor={editor} disabled={disabled} voices={voices} />
       {confirm && (
         <ConfirmDialog
           message="지금까지 수정한 음표가 모두 초기화됩니다."

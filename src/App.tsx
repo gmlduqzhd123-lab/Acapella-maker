@@ -16,6 +16,7 @@ import { ConfirmDialog } from "./components/ConfirmDialog";
 import type { TransportState } from "./components/AudioPlayer";
 import { useRhythm } from "./quantization/useRhythm";
 import { ExportPanel } from "./components/ExportPanel";
+import { useVoices } from "./voices/useVoices";
 import "./App.css";
 
 function App() {
@@ -43,6 +44,7 @@ function App() {
     analysis.effective?.bpm ?? null,
     audio?.objectUrl ?? "empty",
   );
+  const voices = useVoices(editor, rhythm);
   function seek(time: number) {
     if (player.current) {
       player.current.currentTime = time;
@@ -221,7 +223,7 @@ function App() {
                   악보 <small>준비 중</small>
                 </span>
               </div>
-              <span className="tiny-tag">STEP 06</span>
+              <span className="tiny-tag">STEP 07</span>
             </div>
             <div className={`editor-body ${audio ? "has-audio" : ""}`}>
               <AnalysisControls
@@ -293,6 +295,8 @@ function App() {
                       : "원본 음원 재생"}
                   </button>
                   <PianoRoll
+                    voices={voices}
+                    stopOriginal={() => player.current?.pause()}
                     rhythm={rhythm}
                     editor={editor}
                     disabled={busy || analysis.busy}
@@ -301,6 +305,7 @@ function App() {
                     seek={seek}
                   />
                   <ExportPanel
+                    voices={voices}
                     filename={audio.metadata.name}
                     notes={editor.notes}
                     rhythm={rhythm}

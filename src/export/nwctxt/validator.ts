@@ -6,6 +6,9 @@ import { keySignature } from "./keySignature.ts";
 import { parseNwcLine } from "./serializer.ts";
 import { positionToMidi } from "./pitch.ts";
 import { MAX_NWC_LANES } from "./lanes.ts";
+import type { VoiceExport } from "../../voices/exportVoices";
+import { prepareVoiceExport, SATB_CLEFS } from "../../voices/exportVoices.ts";
+import { VOICE_NAMES } from "../../voices/types.ts";
 
 /** Validate both source provenance/tick arithmetic AND independently parsed text.
  * This is our supported-subset validator, not a replacement for NWC acceptance.
@@ -14,6 +17,7 @@ export function validateNwctxt(
   text: string,
   document: NwcDocument,
   snapshot: ExportSnapshot,
+  voices?: VoiceExport,
 ) {
   const errors: string[] = [];
   const fail = (message: string) => {
@@ -25,6 +29,10 @@ export function validateNwctxt(
   >();
   const length = measureTicks(document.timeSignature),
     expectedKey = keySignature(snapshot.key);
+  const satb = voices ? prepareVoiceExport(snapshot, voices) : null;
+  if ((document.voiceMode === "satb") !== !!satb) fail("SATB metadata");
+  if (satb && document.staffs.length !== satb.groups.length)
+    fail("SATB staff count");
   if (
     document.bpm !== snapshot.bpm ||
     document.timeSignature !== snapshot.timeSignature ||
@@ -38,7 +46,11 @@ export function validateNwctxt(
     fail("AddStaff 수");
   document.staffs.forEach((staff, lane) => {
     if (
-      staff.name !== `Draft Voice ${lane + 1}` ||
+      staff.name !==
+        (satb
+          ? VOICE_NAMES[satb.groups[lane]?.role]
+          : `Draft Voice ${lane + 1}`) ||
+      (satb && staff.clef !== SATB_CLEFS[satb.groups[lane]?.role]) ||
       !["Treble", "Bass"].includes(staff.clef) ||
       staff.key.signature !== expectedKey.signature ||
       staff.key.tonic !== expectedKey.tonic
@@ -70,6 +82,11 @@ export function validateNwctxt(
         )
           fail("Rest/Tie");
         for (const pitch of item.pitches) {
+          if (
+            satb &&
+            satb.map.map[pitch.noteId]?.voice !== satb.groups[lane]?.role
+          )
+            fail("SATB source voice");
           const previous = reconstructed.get(pitch.noteId);
           if (previous) {
             if (

@@ -1,12 +1,16 @@
 import { useState } from "react";
 import type { NoteEditor } from "../../editor/useNoteEditor";
 import { noteName as midiNoteName } from "../../music/noteNames";
+import type { VoiceController } from "../../voices/useVoices";
+import { VoiceInspector } from "../voices/VoiceInspector";
 export function NoteInspector({
   editor,
   disabled,
+  voices,
 }: {
   editor: NoteEditor;
   disabled: boolean;
+  voices: VoiceController;
 }) {
   const note = editor.notes.find((note) => note.id === editor.selectedNoteId);
   const [values, setValues] = useState(() => ({
@@ -75,6 +79,7 @@ export function NoteInspector({
       {field("midi", "MIDI 음높이")}
       {field("start", "시작 (초)")}
       {field("duration", "길이 (초)")}
+      <VoiceInspector voices={voices} noteId={note.id} disabled={disabled} />
       <span>
         {metadata.origin === "manual"
           ? "직접 추가"

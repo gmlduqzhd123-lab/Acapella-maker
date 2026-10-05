@@ -1,0 +1,158 @@
+.voice-panel {
+  padding: 18px;
+  margin: 16px 0;
+  border: 1px solid #d8ddd7;
+  border-radius: 12px;
+  min-width: 0;
+  background: #f6f8fb;
+}
+.voice-panel h3 {
+  margin: 0;
+}
+.voice-panel p,
+.voice-panel small {
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.voice-heading,
+.voice-actions,
+.voice-summary,
+.voice-ranges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+.voice-heading {
+  justify-content: space-between;
+}
+.voice-actions {
+  margin: 12px 0;
+}
+.voice-actions input[type="number"] {
+  width: 100px;
+  max-width: 100%;
+}
+.voice-ranges > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 130px;
+}
+.voice-ranges input {
+  width: 100%;
+}
+.voice-panel label,
+.voice-inspector label {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  font-size: 12px;
+}
+.voice-panel details {
+  font-size: 13px;
+  margin: 12px 0;
+}
+.voice-panel summary {
+  cursor: pointer;
+}
+.voice-card {
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  border-left: 4px solid;
+  min-width: 90px;
+}
+.voice-soprano {
+  --voice-color: #305c9a;
+  --voice-fill: #d9e6fa;
+  border-color: #305c9a;
+}
+.voice-alto {
+  --voice-color: #76549b;
+  --voice-fill: #eaddf5;
+  border-color: #76549b;
+}
+.voice-tenor {
+  --voice-color: #8a5b17;
+  --voice-fill: #f9e8c5;
+  border-color: #8a5b17;
+}
+.voice-bass {
+  --voice-color: #237362;
+  --voice-fill: #cfeee5;
+  border-color: #237362;
+}
+.voice-unassigned {
+  --voice-color: #72777a;
+  --voice-fill: #e6e9eb;
+  border-color: #72777a;
+}
+.pr-note.voice-colored {
+  background: var(--voice-fill);
+  border-color: var(--voice-color);
+  color: #24303a;
+}
+.voice-warning {
+  color: #91521d;
+}
+.voice-issues {
+  max-height: 220px;
+  overflow: auto;
+  padding-left: 20px;
+}
+.voice-issues button {
+  font-size: 12px;
+  text-align: left;
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.voice-inspector {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.voice-inspector small {
+  font-size: 11px;
+}
+.voice-guide {
+  border-top: 1px solid #dde2e7;
+  margin-top: 15px;
+  padding-top: 14px;
+}
+.voice-guide span {
+  font-size: 12px;
+}
+.voice-guide button {
+  cursor: pointer;
+}
+.voice-panel input,
+.voice-panel select,
+.voice-inspector select {
+  padding: 6px;
+  border: 1px solid #bbc5c1;
+  border-radius: 5px;
+  background: white;
+  min-width: 0;
+}
+.voice-panel input[type="checkbox"] {
+  width: auto;
+}
+@media (max-width: 640px) {
+  .voice-panel {
+    padding: 12px;
+  }
+  .voice-ranges > div {
+    width: calc(50% - 10px);
+  }
+  .voice-card {
+    min-width: 70px;
+  }
+  .voice-inspector {
+    width: 100%;
+  }
+}

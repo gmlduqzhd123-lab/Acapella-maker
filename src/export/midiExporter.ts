@@ -4,10 +4,18 @@ import { validateExportSnapshot } from "./snapshot.ts";
 import { secondsPerQuarter } from "../quantization/timeConversion.ts";
 import { TIME_SIGNATURES } from "../quantization/grid.ts";
 import { sortNotes } from "../editor/noteMath.ts";
+import type { VoiceExport } from "../voices/exportVoices";
+import { prepareVoiceExport } from "../voices/exportVoices.ts";
+import { VOICE_NAMES } from "../voices/types.ts";
 const { Midi } = MidiPackage;
 /** SMF Type1. Physical audio time starts at MIDI 0, irrespective of pickup/origin. */
-export function exportMidi(snapshot: ExportSnapshot): Uint8Array {
+export function exportMidi(
+  snapshot: ExportSnapshot,
+  voices?: VoiceExport,
+): Uint8Array {
   validateExportSnapshot(snapshot);
+  const satb = voices ? prepareVoiceExport(snapshot, voices) : null;
+  if (satb) snapshot = satb.snapshot;
   const midi = new Midi();
   const quarterBpm = 60 / secondsPerQuarter(snapshot);
   midi.header.fromJSON({
@@ -33,6 +41,36 @@ export function exportMidi(snapshot: ExportSnapshot): Uint8Array {
     track: ReturnType<typeof midi.addTrack>;
     ends: Map<number, number>;
   }> = [];
+  if (satb) {
+    for (const [channel, group] of satb.groups.entries()) {
+      const track = midi.addTrack();
+      track.name = VOICE_NAMES[group.role];
+      track.channel = channel;
+      for (const note of group.notes) {
+        if (!note.velocity)
+          throw new Error(
+            "velocity가 0인 음표는 MIDI note-on으로 표현할 수 없습니다. 음표를 정리해 주세요.",
+          );
+        const start = Math.round(
+            (note.start / encodedQuarterSeconds) * snapshot.ppq,
+          ),
+          end = Math.max(
+            start + 1,
+            Math.round(
+              ((note.start + note.duration) / encodedQuarterSeconds) *
+                snapshot.ppq,
+            ),
+          );
+        track.addNote({
+          midi: note.midi,
+          ticks: start,
+          durationTicks: end - start,
+          velocity: Math.min(1, (note.velocity + 1e-8) / 127),
+        });
+      }
+    }
+    return midi.toArray();
+  }
   for (const note of sortNotes(snapshot.notes)) {
     // Note-on velocity0 means note-off in SMF. Do not silently lose that note.
     if (note.velocity === 0)

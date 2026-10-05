@@ -6,6 +6,8 @@ import { exportFilename, exportTitle } from "../export/filename";
 import { exportNwctxt } from "../export/nwctxt/exporter";
 import { downloadFile } from "../export/download";
 import "./ExportPanel.css";
+import type { VoiceController } from "../voices/useVoices";
+import { prepareVoiceExport } from "../voices/exportVoices";
 
 interface Props {
   filename: string;
@@ -14,6 +16,7 @@ interface Props {
   musicalKey: MusicalKey | null;
   duration: number;
   disabled: boolean;
+  voices: VoiceController;
 }
 export function ExportPanel({
   filename,
@@ -22,8 +25,32 @@ export function ExportPanel({
   musicalKey,
   duration,
   disabled,
+  voices,
 }: Props) {
   const { settings, applied } = rhythm;
+  const [exportMode, setMode] = useState<"draft" | "satb">("draft");
+  const [exclude, setExclude] = useState(false);
+  const voiceData = useMemo(
+    () =>
+      exportMode === "satb" && voices.result
+        ? {
+            map: structuredClone(
+              Object.fromEntries(
+                voices.result.assignments.map((a) => [
+                  a.noteId,
+                  {
+                    voice: a.voice,
+                    origin: a.origin,
+                    confidence: a.confidence,
+                  },
+                ]),
+              ),
+            ),
+            excludeUnassigned: exclude,
+          }
+        : undefined,
+    [exportMode, voices.result, exclude],
+  );
   const tonic = musicalKey?.tonic,
     mode = musicalKey?.mode,
     confidence = musicalKey?.confidence;
@@ -54,10 +81,22 @@ export function ExportPanel({
       };
     }
   }, [filename, notes, settings, stableKey, applied, duration]);
-  const nwc = useMemo(() => {
-    if (!current.snapshot) return { result: null, error: "" };
+  const voiceError = useMemo(() => {
+    if (exportMode !== "satb") return "";
+    if (voices.busy) return "성부 추정 중입니다. 완료 후 내보내 주세요.";
+    if (!voiceData || !current.snapshot)
+      return "성부 분석을 다시 실행해 주세요.";
     try {
-      return { result: exportNwctxt(current.snapshot), error: "" };
+      prepareVoiceExport(current.snapshot, voiceData);
+      return "";
+    } catch (reason) {
+      return reason instanceof Error ? reason.message : "성부를 확인해 주세요.";
+    }
+  }, [exportMode, voiceData, current, voices.busy]);
+  const nwc = useMemo(() => {
+    if (!current.snapshot || voiceError) return { result: null, error: "" };
+    try {
+      return { result: exportNwctxt(current.snapshot, voiceData), error: "" };
     } catch (reason) {
       return {
         result: null,
@@ -67,7 +106,7 @@ export function ExportPanel({
             : "NWC 파일을 만들지 못했습니다.",
       };
     }
-  }, [current]);
+  }, [current, voiceData, voiceError]);
   const [receipt, setReceipt] = useState<{
     source: typeof current;
     message: string;
@@ -76,11 +115,11 @@ export function ExportPanel({
   const [saving, setSaving] = useState(false);
   async function saveMidi() {
     const snapshot = current.snapshot;
-    if (!snapshot || saving || disabled) return;
+    if (!snapshot || saving || disabled || voiceError) return;
     setSaving(true);
     try {
       const { exportMidi } = await import("../export/midiExporter");
-      const bytes = exportMidi(snapshot);
+      const bytes = exportMidi(snapshot, voiceData);
       downloadFile(
         exportFilename(snapshot.title, "mid"),
         new Blob([new Uint8Array(bytes)], { type: "audio/midi" }),
@@ -131,10 +170,53 @@ export function ExportPanel({
         보존됩니다.
       </p>
       {current.error && <p className="export-warning">{current.error}</p>}
+      <fieldset className="voice-actions">
+        <legend>악보 성부</legend>
+        <label>
+          <input
+            type="radio"
+            name="export-voice"
+            checked={exportMode === "draft"}
+            onChange={() => setMode("draft")}
+          />{" "}
+          Draft Voice
+        </label>
+        <label>
+          <input
+            type="radio"
+            name="export-voice"
+            checked={exportMode === "satb"}
+            disabled={!voices.result}
+            onChange={() => setMode("satb")}
+          />{" "}
+          SATB 성부
+        </label>
+      </fieldset>
+      {exportMode === "satb" && (
+        <>
+          <label>
+            <input
+              type="checkbox"
+              checked={exclude}
+              onChange={(e) => setExclude(e.target.checked)}
+            />{" "}
+            미분류 음표 제외하고 내보내기
+          </label>
+          <p className="export-help">
+            음표가 있는 성부만 내보냅니다. Tenor는 일반 Treble clef이며 octave
+            clef는 사용하지 않습니다.
+          </p>
+        </>
+      )}
+      {voiceError && (
+        <p className="export-warning" role="alert">
+          {voiceError}
+        </p>
+      )}
       <div className="export-buttons">
         <button
           className="button button-primary"
-          disabled={!current.snapshot || disabled || saving}
+          disabled={!current.snapshot || disabled || saving || !!voiceError}
           onClick={() => void saveMidi()}
         >
           MIDI 다운로드

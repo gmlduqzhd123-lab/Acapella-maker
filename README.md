@@ -2,7 +2,7 @@
 
 듣던 음악을, 부를 수 있는 악보로.
 
-React · TypeScript · Vite 기반 GitHub Pages 전용 정적 웹앱입니다. 현재 릴리스는 **0.6.0: MIDI / NWCTXT Export Beta**입니다. AI가 초안을 만들고 사람이 음악을 완성합니다.
+React · TypeScript · Vite 기반 GitHub Pages 전용 정적 웹앱입니다. 현재 릴리스는 **0.7.0: SATB Voice Assignment Beta**입니다. AI가 초안을 만들고 사람이 음악을 완성합니다.
 
 ## 실제 구현 상태
 
@@ -20,11 +20,11 @@ React · TypeScript · Vite 기반 GitHub Pages 전용 정적 웹앱입니다. �
 - 무음·단일음·근거 부족은 “추정 불가” 표시와 직접 입력 안내
 - 오류 복구·모바일 UI·GitHub Pages 하위 경로
 
-✅ Audio · BPM / Key · Basic Pitch · Piano Roll · Quantization · MIDI Export · NWCTXT Export Beta
+✅ Audio · BPM / Key · Basic Pitch · Piano Roll · Quantization · MIDI Export · NWCTXT Export Beta · SATB 성부 추정 Beta · 수동 성부 지정
 
-❌ SATB 자동 성부 분리 · 실제 NWC Windows 자동 검증 · 오선보 렌더링 · MusicXML · 프로젝트 저장 · 일반곡 자동 아카펠라 편곡
+❌ 가수 음성 분리 · Lead 분리 · 실제 NWC Windows 자동 검증 · 오선보 렌더링 · MusicXML · 프로젝트 저장 · 일반곡 자동 아카펠라 편곡
 
-**아직 구현하지 않은 기능:** 위 항목과 Source Separation, IndexedDB, YouTube, M4A·OGG·MP4 지원. Basic Pitch는 SATB 분리기가 아니며 감지·편집 음표는 하나의 polyphonic note collection입니다. NWCTXT 자동 검증은 지원하는 구문과 음표 보존을 검사하며 실제 NWC 프로그램의 렌더링·재생을 검증한 것은 아닙니다.
+**아직 구현하지 않은 기능:** 위 항목과 Source Separation, IndexedDB, YouTube, M4A·OGG·MP4 지원. Basic Pitch의 감지·편집 음표는 하나의 polyphonic note collection이며 SATB는 별도 metadata로 할당합니다. 원래 녹음의 가수 음성을 분리하거나 실제 성부를 복원하지 않습니다. NWCTXT 자동 검증은 지원하는 구문과 음표 보존을 검사하며 실제 NWC 프로그램의 렌더링·재생을 검증한 것은 아닙니다.
 
 ## 로컬 실행과 검사
 
@@ -168,10 +168,11 @@ src/
   music/       NoteEvent·MusicalKey·일반적인 조표 이름
   editor/      AI 원본과 WorkingNotes 분리·history·편집 범위 보호
   quantization/ PPQ·초/tick·박자표·grid·음가·tie·preview·issues·Snap
+  voices/      bounded beam SATB 추정·soft range·metadata·통계·export 보호
   score/       후속 ScoreData 계약
   export/      후속 ScoreExporter 계약
   storage/     후속 ProjectData 계약
-  workers/     파형·BPM/Key·Pitch Worker
+  workers/     파형·BPM/Key·Pitch·성부 추정 Worker
   components/  기존 오디오 UI 및 분석 컨트롤·편집 UI
 tests/         실제 PCM·WAV·MP3 검사
 docs/          설계 기준·현재 구현 및 다음 단계
@@ -276,3 +277,46 @@ docs/          설계 기준·현재 구현 및 다음 단계
 표기 export는 현재 main thread의 순수 함수입니다. 악보 길이·겹침 정도에 따라 직렬화 객체가 증가합니다. notation lane 최대8, MIDI 동일 pitch 겹침 최대15 채널이며 대용량 export FPS/RAM 한계는 별도로 벤치마크하지 않았습니다. 기존 2,000 UI/10,000 순수 quantization 검사는 유지합니다. 변박·변속·swing·triplet·실제 악기 음색·SATB·오선보·MusicXML·저장은 미구현입니다.
 
 다음 Voice Assignment 단계에는 immutable WorkingNotes snapshot과 musical ticks, lane별 source ID, report/validation 결과를 입력으로 사용할 수 있습니다. 현재 Draft Voice 번호를 Soprano/Alto/Tenor/Bass라고 해석하면 안 됩니다.
+
+## 7단계 SATB Voice Assignment Beta (0.7.0)
+
+✅ SATB 성부 추정 Beta · 수동 성부 지정 · 성부 필터 · 검토 경고 · 가이드 재생 · SATB MIDI/NWCTXT
+
+❌ 가수 음성 분리 · Lead 분리 · 일반곡 자동 편곡 · VexFlow · MusicXML · IndexedDB
+
+### 사용과 데이터
+
+1. 실제 Pitch 분석 → Piano Roll 편집 → 최신 Quantization 적용 → **SATB 성부 분석** 순서입니다. 미리보기만으로는 분석을 시작하지 않습니다.
+2. S/A/T/B/?/전체 필터, 문자와 색으로 초안을 확인합니다. 음역·8반음 이상 도약·교차·수동 지정 겹침 경고를 클릭하면 음표 선택, 화면 탐색, 원본 seek가 연결됩니다. 경고는 처음 50개만 표시합니다.
+3. Inspector에서 단일 성부 또는 시간 구간과 현재 성부 필터로 일괄 지정합니다. `직접 지정한 성부 유지`는 기본 ON으로 재분석 때 같은 ID를 고정합니다. OFF 후 재분석하면 자동 추정을 새로 실행합니다. 수동 겹침은 경고와 SATB export 잠금으로 드러냅니다.
+4. WorkingNotes 수정/추가/삭제, Quantization 재적용/설정 변경, soft range 변경은 stale로 만듭니다. `성부 분석을 다시 실행해 주세요.` 안내 후 재분석합니다. 같은 세션의 수동 ID는 유지하고 새 파일/새 Pitch 원본에서는 초기화합니다. 취소와 늦은 Worker 결과 차단을 제공합니다.
+5. 기본 export 모드인 **Draft Voice**를 유지합니다. SATB는 비어 있지 않은 Soprano/Alto/Tenor/Bass만 내보냅니다. 미분류는 기본 차단이며 명시적 제외 checkbox가 필요합니다. 같은 성부 겹침은 차단하므로 수정 또는 Draft fallback을 사용하세요. 필터/Solo/Mute는 export 음표를 삭제하지 않습니다.
+
+`AnalysisResult.notes`와 `editor.notes`는 수정하지 않습니다. `noteId → {voice, origin: auto/manual, confidence}` 및 비용 이유를 별도 metadata로 관리하고 결과 track/export snapshot은 깊이 복제합니다. 수동 확신도는 null이며 `직접 지정`을 표시합니다. 성부 수동 지정 자체의 Undo/Redo는 아직 없으며 기존 음표 편집 Undo/Redo는 유지됩니다.
+
+### 알고리즘
+
+- 전용 Worker의 순수 TypeScript bounded Beam Search: cluster 종료 beam32, 각 음표 후 유지 후보64, 확장 중 임시 후보 최대320. 최근/이전 음표 상태 중복 제거, 비용과 안정적인 순서로 정렬하며 완전 탐색은 아닙니다.
+- 최신 PPQ960 startTick을 첫 tick 기준 **50ms** 이내 harmonic cluster로 묶습니다. 체인으로 범위를 늘리지 않습니다. 실제 적용된 초 단위 start/duration으로 sustain을 보호합니다.
+- soft range: S60–84(C4–C6), A55–76(G3–E5), T48–67(C3–G4), B40–60(E2–C4). MIDI 숫자로 수정하며 범위 밖도 허용합니다. 밖의 반음당4 + 중심 거리×0.12 비용입니다.
+- Leap 비용: 0–4반음 0.08/반음, 5–7 추가0.5/반음, 8–12 추가1.5/반음, 이후 추가3/반음. 시간 계수 `0.2+0.8*exp(-max(0,gap)/2)`로 긴 쉼 뒤 완화합니다.
+- Continuity는 최근 두 음표의 진행 간격과 새 간격 차이×시간 계수, 기존 흐름 중 새 성부 진입 비용2입니다. 매번 pitch rank로 S/A/T/B를 고정하지 않습니다.
+- 활성 성부와 역전된 반음당 crossing 비용0.2로 교차를 soft하게 허용합니다. Alto/Tenor 교차 fixture에서 진행을 유지하는지 검사합니다.
+- 같은 성부의 활성음과 겹치면 overlap/sustain 후보 금지. 20ms 겹침 허용이나 음표 자르기를 하지 않습니다. 수동 고정 간 충돌은 고정과 경고를 유지합니다.
+- strength≥0.25인 cluster 상위4개의 pitch rank는 약한 register feature(0.35)입니다. AI strength 비용 `(1-strength)*5`, unassigned 비용 `2+14*strength`와 비교합니다. 과도한 음역/도약/노이즈/5음 이상은 미분류가 될 수 있으며 삭제나 누락음 생성은 없습니다.
+- **성부 추정 확신도**는 해당 beam 상태의 최선/차선 유한 비용 차이 `gap/(gap+3)`. 지역 최선이 아닌 선택 또는 비교 후보 하나이면0입니다. 전역 최적성/정답 확률이 아닙니다.
+
+### 가이드와 export
+
+Web Audio triangle oscillator와 낮은 gain으로 S/A/T/B 개별/전체, Solo/Mute를 제공합니다. 명시적 클릭에서 AudioContext를 시작합니다. 원본 위치에서 시작하되 원본 재생을 일시정지하는 독립 가이드 clock입니다. 25ms scheduler/150ms lookahead로 실제 start/duration/velocity를 재생하며 정지/결과 변경/unmount 때 node를 정리합니다. 외부 soundfont나 가수 음색은 없습니다.
+
+SATB MIDI는 역할명, 서로 다른 channel0–3, PPQ/tempo/meter/pitch/timing/velocity를 유지합니다. SATB NWCTXT는 성부별 한 staff, S/A/T Treble·B Bass. Tenor octave clef는 미구현이며 실제 MIDI pitch를 유지합니다. 기존 조표/음가/쉼표/마디/tie와 validator를 재사용하고 staff name/clef/ID/pitch/timing을 확인합니다. **Windows NWC 실제 열기·재생은 여전히 수동 미검증**입니다.
+
+### 검증과 한계
+
+- 기존48 unit/23 E2E 유지 + 성부8 unit/실제 추론2 E2E = **56 unit/25 E2E**. WAV/MP3, CPU fallback, 모델 reuse/tensor, cancel/stale, BPM/Key 회귀를 mock으로 대체하지 않습니다.
+- authored 4마디32음표 순수 fixture는32/32 성부 일치. 별도 실제 oscillator WAV→Basic Pitch→Quantization→SATB 로컬 Edge는38개 검출, ground truth32개 매칭,31/32 성부 일치 **96.875%**, 추가 검출6개. 초기 S8/A8/T8/B11/미분류3입니다.
+- exact MIDI와 onset≤240tick(120BPM125ms)의 일대일 매칭이며 duration은 진단 항목입니다. E2E 기준 최소24/32 매칭, 매칭 성부 정확도≥85%. 합성 fixture 결과를 일반곡 정확도로 확대하지 않습니다. CI/배포 측정은 최종 검증 보고서에 따로 기록합니다.
+- 실제 다성 C Major는12개, S3/A3/T3/B0/미분류3. 없는 Bass를 만들지 않습니다. 실제 MIDI/NWCTXT 다운로드, 수동 고정/재분석, stale/미분류/겹침 차단, Draft fallback, 가이드,390px touch/Inspector/overflow를 검사합니다.
+- 순수 엔진2,000개 검사에서 로컬 약1–1.5초, 유지 후보64와 모든 ID 보존을 확인합니다. 기존2,000 UI/10,000 quantization 검사는 유지합니다. FPS/RAM 및 실제 장시간 곡/모든 브라우저 최악 성능은 측정하지 않았습니다. 수동 고정이 많으면 예약 겹침 검사 비용이 증가합니다.
+- 단일 템포/박자표와 heuristic cost입니다. 성부 복원·Lead·자동 편곡·오선보·저장은 없습니다. 다음 편곡 단계는 WorkingNotes/명시적 성부 metadata/musical ticks/warnings/export validator를 사용할 수 있으나 편곡 알고리즘은 미구현입니다.
