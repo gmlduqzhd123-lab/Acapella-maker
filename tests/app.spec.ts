@@ -218,7 +218,7 @@ test("mobile layout fits, refresh under project subpath works, no fake analysis"
   await expect(
     page.getByRole("button", { name: "파일 선택", exact: true }),
   ).toBeVisible();
-  await expect(page.locator(".metric strong").first()).toHaveText("—");
+  await expect(page.getByRole("button", { name: "BPM 수정" })).toHaveText("—");
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,

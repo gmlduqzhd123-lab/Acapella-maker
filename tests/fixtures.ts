@@ -39,7 +39,10 @@ export function makeWav(
   }
   return wav;
 }
-export function makeMp3(): Buffer {
+export function makeMp3(
+  sourceSamples?: Float32Array,
+  sampleRate = 44100,
+): Buffer {
   const require = createRequire(import.meta.url);
   const source = readFileSync(require.resolve("lamejs/lame.all.js"), "utf8");
   const sandbox = vm.createContext({});
@@ -49,12 +52,12 @@ export function makeMp3(): Buffer {
     rate: number,
     kbps: number,
   ) => { encodeBuffer(samples: Int16Array): Int8Array; flush(): Int8Array };
-  const encoder = new Encoder(1, 44100, 128);
-  const pcm = new Int16Array(44100 * 3);
+  const encoder = new Encoder(1, sampleRate, 128);
+  const pcm = new Int16Array(sourceSamples?.length ?? sampleRate * 3);
   for (let frame = 0; frame < pcm.length; frame++)
-    pcm[frame] = Math.round(
-      Math.sin((2 * Math.PI * 440 * frame) / 44100) * 15000,
-    );
+    pcm[frame] = sourceSamples
+      ? Math.round(Math.max(-1, Math.min(1, sourceSamples[frame])) * 32767)
+      : Math.round(Math.sin((2 * Math.PI * 440 * frame) / sampleRate) * 15000);
   const chunks: Buffer[] = [];
   for (let start = 0; start < pcm.length; start += 1152)
     chunks.push(

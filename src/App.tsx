@@ -4,11 +4,15 @@ import { AudioImportError } from "./audio/validation";
 import type { LoadedAudio } from "./audio/types";
 import { AudioPlayer } from "./components/AudioPlayer";
 import { FileInfo } from "./components/FileInfo";
+import { AnalysisControls } from "./components/AnalysisControls";
+import { AnalysisResults } from "./components/AnalysisResults";
+import { useMusicAnalysis } from "./analysis/useMusicAnalysis";
 import { Icon } from "./components/Icon";
 import { UploadZone } from "./components/UploadZone";
 import "./App.css";
 
 function App() {
+  const analysis = useMusicAnalysis();
   const [audio, setAudio] = useState<LoadedAudio | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -26,6 +30,7 @@ function App() {
   );
   async function importFiles(files: File[]) {
     if (busyRef.current) return;
+    analysis.cancel();
     if (files.length !== 1) {
       setError("한 번에 하나의 음악 파일을 선택해 주세요.");
       return;
@@ -37,6 +42,7 @@ function App() {
     setError("");
     try {
       const loaded = await loadLocalAudio(files[0], controller.signal);
+      analysis.reset();
       if (activeAudio.current)
         URL.revokeObjectURL(activeAudio.current.objectUrl);
       activeAudio.current = loaded;
@@ -56,6 +62,7 @@ function App() {
   }
   function removeAudio() {
     if (busyRef.current) return;
+    analysis.reset();
     if (activeAudio.current) URL.revokeObjectURL(activeAudio.current.objectUrl);
     activeAudio.current = null;
     setAudio(null);
@@ -86,7 +93,7 @@ function App() {
             </h1>
             <p>AI가 음악을 분석하고 아카펠라 악보 초안을 만들어드립니다.</p>
             <span className="stage-tag">
-              <span /> 첫 번째 단계 · 음원 준비
+              <span /> 두 번째 단계 · 음악 분석
             </span>
           </div>
           <button
@@ -125,20 +132,16 @@ function App() {
                 </p>
               </div>
             )}
-            <div className="analysis-section">
-              <span className="section-label">분석 정보</span>
-              <div className="metric">
-                <span>BPM</span>
-                <strong>—</strong>
-              </div>
-              <div className="metric">
-                <span>Key</span>
-                <strong>—</strong>
-              </div>
-              <p className="muted-note">
-                음악 분석은 다음 개발 단계에서 연결됩니다.
-              </p>
-            </div>
+            <AnalysisResults
+              key={`${audio?.objectUrl ?? "empty"}:${analysis.status}`}
+              automatic={analysis.result}
+              effective={analysis.effective}
+              overrides={analysis.overrides}
+              setOverrides={analysis.setOverrides}
+              busy={analysis.busy}
+              progress={analysis.progress}
+              hasAudio={!!audio}
+            />
             <div className="local-note">
               <Icon name="shield" size={20} />
               <p>음원은 이 브라우저 안에만 머물며, 외부로 전송되지 않습니다.</p>
@@ -147,7 +150,7 @@ function App() {
           <section className="editor-panel panel">
             <div className="editor-toolbar">
               <div>
-                <span className="tab active">음원</span>
+                <span className="tab active">음원 · 음악 분석</span>
                 <span className="tab upcoming">
                   Piano Roll <small>준비 중</small>
                 </span>
@@ -155,9 +158,20 @@ function App() {
                   악보 <small>준비 중</small>
                 </span>
               </div>
-              <span className="tiny-tag">STEP 01</span>
+              <span className="tiny-tag">STEP 02</span>
             </div>
             <div className={`editor-body ${audio ? "has-audio" : ""}`}>
+              <AnalysisControls
+                status={analysis.status}
+                progress={analysis.progress}
+                hasAudio={!!audio}
+                importing={busy}
+                error={analysis.error}
+                onStart={() => {
+                  if (audio) void analysis.start(audio.buffer);
+                }}
+                onCancel={analysis.cancel}
+              />
               {error && (
                 <div className="error-message" role="alert">
                   <strong>파일을 불러오지 못했습니다</strong>
@@ -192,9 +206,13 @@ function App() {
               <span className="status-dot" />
               {busy
                 ? "브라우저에서 음원 처리 중…"
-                : audio
-                  ? "음원 준비 완료 · 분석 기능은 다음 단계에서 제공됩니다."
-                  : "음원을 불러와 시작하세요"}
+                : analysis.busy
+                  ? "브라우저에서 BPM · Key 분석 중…"
+                  : analysis.status === "complete"
+                    ? "음악 분석 완료 · 자동 분석 결과를 확인해 주세요."
+                    : audio
+                      ? "음원 준비 완료 · 음악 분석을 시작할 수 있습니다."
+                      : "음원을 불러와 시작하세요"}
               <span>브라우저 내 처리</span>
             </div>
           </section>
@@ -215,18 +233,19 @@ function App() {
                   <em>지금 사용 가능</em>
                 </div>
               </li>
-              <li>
+              <li className="current">
                 <span>02</span>
                 <div>
                   <strong>음악 분석</strong>
-                  <p>BPM · Key · Pitch</p>
+                  <p>BPM · Key 자동 분석</p>
+                  <em>지금 사용 가능</em>
                 </div>
               </li>
               <li>
                 <span>03</span>
                 <div>
                   <strong>음표 편집</strong>
-                  <p>Piano Roll · Quantization</p>
+                  <p>Pitch · Piano Roll · Quantization</p>
                 </div>
               </li>
               <li>
