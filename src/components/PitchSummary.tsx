@@ -15,6 +15,10 @@ export function PitchSummary({ result }: { result: AnalysisResult | null }) {
     <section className="pitch-summary" aria-label="AI 음표 분석 결과">
       <span className="section-label">AI NOTE DRAFT</span>
       <h2>음표 분석 완료</h2>
+      <p className="pitch-disclaimer">
+        아래는 AI 분석 원본입니다. 수정한 음표는 Piano Roll의 편집본에서
+        확인하세요.
+      </p>
       <div className="pitch-metrics">
         <div>
           <span>감지된 음표</span>

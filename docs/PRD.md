@@ -1,6 +1,6 @@
 # AcaScore AI · 제품 설계 기준
 
-기준: 2026-10-05 대화의 전체 제품 설계와 사용자가 첨부한 **3단계 개발 지시**. 저장소는 gmlduqzhd123-lab/Acapella-maker이며 기존 구조를 확장합니다.
+기준: 2026-10-05 대화의 전체 제품 설계와 사용자가 첨부한 **4단계 개발 지시**. 저장소는 gmlduqzhd123-lab/Acapella-maker이며 기존 구조를 확장합니다.
 
 ## 제품
 
@@ -10,7 +10,7 @@
 - 철학: AI가 초안을 만들고 사람이 음악을 완성한다.
 - 홈 버튼: 새 악보 만들기
 - 현재 Drop Zone: **분석할 음악 파일을 여기에 놓아주세요.**
-- PC 우선 작업실 UI. 현재 음원·음악 분석 사용 가능, Piano Roll·악보 준비 중.
+- PC 우선 작업실 UI. 현재 음원·음악 분석·Piano Roll 편집 사용 가능, 악보 준비 중.
 
 ## 절대 제약
 
@@ -84,7 +84,7 @@ TensorFlow.js 3.21 Browser Platform의 window 타이머 참조는 공개 Platfor
 9. 일반곡 → 아카펠라 편곡 (MVP 완성 후)
 10. 프로젝트 저장·고급 기능·추가 포맷
 
-Piano Roll 편집·Quantization·악보 렌더링·MIDI·NWCTXT·MusicXML·IndexedDB·YouTube·추가 포맷·SATB·편곡·Source Separation·Demucs는 이번 단계에서 구현하지 않습니다. 음원부터 NoteWorthy Composer까지 MVP가 실제로 완성될 때까지 고급 AI 편곡으로 확장하지 않습니다.
+Quantization·악보 렌더링·MIDI·NWCTXT·MusicXML·IndexedDB·YouTube·추가 포맷·SATB·편곡·Source Separation·Demucs는 이번 단계에서 구현하지 않습니다. 음원부터 NoteWorthy Composer까지 MVP가 실제로 완성될 때까지 고급 AI 편곡으로 확장하지 않습니다.
 
 ## 데이터 계약
 
@@ -127,3 +127,14 @@ AnalysisResult는 nullable bpm/key, bpmConfidence, 실제 notes, tempoCandidates
 - Pitch 30·60·180초를 점검. 10분 업로드는 유지하되 10분 전체 Pitch의 성능·정확도·브라우저별 최대 메모리는 미검증으로 명시.
 - rAF·재생·스크롤·Pitch 취소·재분석과 결과 교체/제거·unmount 정리 검증.
 - 합성 신호 결과를 다양한 실제 곡의 정확도 통계로 확대 해석하지 않음.
+
+## 4단계 완료 기준 / 0.4.0
+
+- 실제 AI NoteEvent 기반 Piano Roll, viewport 음표/건반/눈금과 CSS grid
+- 원본 AnalysisResult.notes 불변, 별도 WorkingNotes 깊이 복제 / metadata / selected ID
+- Pitch/시간 드래그, 양쪽 resize, Inspector 입력, 추가/삭제, 최대 50회 Undo/Redo
+- dirty 및 원본 복원/재분석 확인 dialog, 성공한 새 분석/파일/제거에서 session 초기화
+- free timing, zoom/Fit, 원본 audio transport/seek/playhead, 선택 optional follow
+- bounds/ID/sort/selection 보호, 모바일 스크롤 및 정밀 입력, 키보드 접근
+- 실제 WAV/MP3 추론→편집 E2E 및 2,000개 별도 UI 성능 검사, 기존 AI/BPM/Key 회귀 유지
+- 후속 Quantization/MIDI/NWCTXT는 WorkingNotes를 사용. 이번 단계는 해당 알고리즘·export를 구현하지 않음.

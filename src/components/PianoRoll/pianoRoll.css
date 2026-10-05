@@ -1,0 +1,240 @@
+.piano-roll {
+  min-width: 0;
+  margin-top: 16px;
+  color: #355847;
+}
+.pr-toolbar {
+  background: #f4f6ee;
+  border: 1px solid #dce3d2;
+  border-radius: 12px 12px 0 0;
+  padding: 14px;
+}
+.pr-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+.pr-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 11px;
+}
+.pr-tools .button {
+  padding: 7px 9px;
+  font-size: 11px;
+}
+.pr-tools button[aria-pressed="true"] {
+  background: #355847;
+  color: white;
+}
+.pr-tools select {
+  max-width: 100%;
+  padding: 5px;
+  margin-left: 5px;
+}
+.pr-help {
+  font-size: 11px;
+  line-height: 1.7;
+}
+.pr-help span {
+  display: none;
+}
+.pr-viewport {
+  height: 648px;
+  overflow: auto;
+  position: relative;
+  border: 1px solid #cbd6c0;
+  overscroll-behavior: contain;
+  max-width: 100%;
+  background: #f9faf6;
+}
+.pr-world {
+  position: relative;
+  min-width: 100%;
+}
+.pr-timeline {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  background: #e9eedf;
+  cursor: pointer;
+  border-bottom: 1px solid #cbd6c0;
+}
+.pr-timeline span {
+  position: absolute;
+  font-size: 10px;
+  padding: 7px 3px;
+  white-space: nowrap;
+  border-left: 1px solid #b7c6a7;
+  height: 100%;
+}
+.pr-keys {
+  position: sticky;
+  left: 0;
+  z-index: 4;
+  width: 64px;
+  background: #fff;
+  pointer-events: none;
+}
+.pr-key {
+  position: absolute;
+  width: 64px;
+  text-align: right;
+  padding-right: 8px;
+  border-bottom: 1px solid #ccd5c2;
+  font-size: 11px;
+  line-height: 24px;
+  color: #3c5541;
+  background: #fff;
+}
+.pr-key.black {
+  background: #435349;
+  color: #e6eee4;
+  width: 53px;
+  border-radius: 0 3px 3px 0;
+}
+.pr-grid {
+  position: absolute;
+  background-image:
+    linear-gradient(to right, #dae2cf 1px, transparent 1px),
+    linear-gradient(to bottom, #e3e8dc 1px, transparent 1px);
+}
+.pr-note {
+  position: absolute;
+  border: 1px solid #5c8057;
+  border-radius: 4px;
+  background: #9fb782;
+  color: #193a25;
+  padding: 0;
+  font-size: 10px;
+  cursor: grab;
+  touch-action: pan-x pan-y;
+  overflow: hidden;
+}
+.pr-note.selected {
+  outline: 2px solid #304f3c;
+  outline-offset: 1px;
+  background: #d3e7ae;
+  z-index: 3;
+}
+.pr-note.manual {
+  background: #edd7a7;
+  border-color: #b18543;
+}
+.pr-note.edited {
+  border-bottom: 3px solid #395f48;
+}
+.pr-note-name {
+  padding: 0 6px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.pr-resize {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: ew-resize;
+  z-index: 1;
+}
+.pr-resize.left {
+  left: 0;
+}
+.pr-resize.right {
+  right: 0;
+}
+.pr-note.selected .pr-resize {
+  background: #476c4340;
+}
+.pr-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #d47843;
+  z-index: 5;
+  pointer-events: none;
+}
+.pr-inspector {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 18px 12px;
+  background: #f4f6ee;
+  font-size: 12px;
+  border-radius: 0 0 12px 12px;
+}
+.pr-inspector small {
+  display: block;
+  font-size: 10px;
+  margin-top: 5px;
+}
+.pr-inspector strong {
+  font-size: 20px;
+}
+.pr-inspector label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.pr-inspector input {
+  width: 100px;
+  border: 1px solid #bac9ae;
+  border-radius: 5px;
+  padding: 8px;
+  color: #355847;
+}
+.confirm-dialog {
+  border: 1px solid #cbd6c0;
+  border-radius: 16px;
+  padding: 28px;
+  max-width: min(440px, 90vw);
+  color: #355847;
+  box-shadow: 0 20px 80px #16251333;
+}
+.confirm-dialog::backdrop {
+  background: #15231e66;
+}
+.confirm-dialog h2 {
+  font-size: 20px;
+}
+.confirm-dialog p {
+  line-height: 1.7;
+  font-size: 14px;
+}
+.confirm-dialog > div {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+.editor-tabs button {
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.editor-tabs button:disabled {
+  cursor: default;
+}
+@media (max-width: 600px) {
+  .pr-viewport {
+    height: 360px;
+  }
+  .pr-help span {
+    display: block;
+  }
+  .pr-toolbar {
+    padding: 10px;
+  }
+  .pr-inspector {
+    gap: 10px;
+  }
+  .pr-inspector input {
+    width: 90px;
+  }
+}

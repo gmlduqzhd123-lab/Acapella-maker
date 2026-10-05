@@ -2,7 +2,7 @@
 
 듣던 음악을, 부를 수 있는 악보로.
 
-React · TypeScript · Vite 기반 GitHub Pages 전용 정적 웹앱입니다. 현재 릴리스는 **0.3.0: 공식 Basic Pitch 실제 음표 분석**입니다. AI가 초안을 만들고 사람이 음악을 완성합니다.
+React · TypeScript · Vite 기반 GitHub Pages 전용 정적 웹앱입니다. 현재 릴리스는 **0.4.0: 실제 NoteEvent Piano Roll Editor**입니다. AI가 초안을 만들고 사람이 음악을 완성합니다.
 
 ## 실제 구현 상태
 
@@ -20,7 +20,7 @@ React · TypeScript · Vite 기반 GitHub Pages 전용 정적 웹앱입니다. �
 - 무음·단일음·근거 부족은 “추정 불가” 표시와 직접 입력 안내
 - 오류 복구·모바일 UI·GitHub Pages 하위 경로
 
-**아직 구현하지 않은 기능:** Piano Roll 편집, Quantization, 악보 렌더링·MIDI·NWCTXT·MusicXML 내보내기, SATB 성부 분리·자동 편곡·Source Separation, IndexedDB, YouTube, M4A·OGG·MP4 지원. Basic Pitch는 SATB 분리기가 아니며 모든 감지 음표는 하나의 polyphonic note cloud입니다.
+**아직 구현하지 않은 기능:** Quantization, 악보 렌더링·MIDI·NWCTXT·MusicXML 내보내기, SATB 성부 분리·자동 편곡·Source Separation, IndexedDB, YouTube, M4A·OGG·MP4 지원. Basic Pitch는 SATB 분리기가 아니며 모든 감지 음표는 하나의 polyphonic note cloud입니다.
 
 ## 로컬 실행과 검사
 
@@ -66,7 +66,7 @@ npm run test:e2e
 - **BPM:** 로그 스펙트럼의 양의 변화량인 spectral flux로 onset novelty 생성 → 국소 평균 제거 → 정규화 자기상관 → onset 간격·회귀를 함께 비교합니다. 분석 범위는 40–240 BPM이며 후보를 유지합니다. 자동 분석의 원래 실수 값은 저장하고, UI에서는 소수점 한 자리로 표시합니다.
 - **Key:** Hann window → 자체 radix-2 FFT → 보간한 스펙트럼 피크 → pitch class/Chroma를 음원 전체에 걸쳐 누적 → Krumhansl–Kessler 장·단조 프로파일 24개와 Pearson 상관을 비교합니다. 짧은 인트로의 단일 주파수만으로 조성을 결정하지 않습니다.
 - **신뢰도:** BPM 주기·간격 일치도, Key 프로파일 일치도·차순위 차이·음계 정보량을 이용한 0–1 휴리스틱입니다. 보정된 정답 확률이 아닙니다. 0.55 미만이거나 추정 불가일 때 확인 안내를 표시합니다.
-- **경로:** LoadedAudio.buffer → createAnalysisInput → analysis.worker (BPM/Key, PCM 반환) → pitch.worker (모델/추론/음표) → AnalysisResult → effectiveResult. mono PCM은 transferable로 이어 전달하며 중복 resampling하지 않습니다. 후속 악보는 effectiveResult의 수정된 BPM/Key와 notes를 사용합니다.
+- **경로:** LoadedAudio.buffer → createAnalysisInput → analysis.worker (BPM/Key, PCM 반환) → pitch.worker (모델/추론/음표) → AnalysisResult → effectiveResult. mono PCM은 transferable로 이어 전달하며 중복 resampling하지 않습니다. 후속 악보는 effectiveResult의 수정된 BPM/Key와 editor.notes(WorkingNotes)를 사용합니다. AnalysisResult.notes는 AI 원본입니다.
 - **명시적 부재:** AnalysisResult의 필드명은 유지하되 bpm/key를 nullable로 확장했습니다. null은 실제 PCM에서 근거를 찾지 못했다는 뜻입니다. 가짜 기본 BPM/Key를 반환하지 않습니다.
 - **수정값의 신뢰도:** 원래 자동 신뢰도는 별도 유지하며, 수동으로 선택한 Key를 자동으로 검증했다고 표시하지 않습니다.
 - **취소:** 준비 단계는 AbortSignal, 실행 중인 Worker는 terminate로 즉시 중단합니다. 작업 ID와 generation 검사로 늦은 응답을 무시합니다. Basic Pitch의 자체 Abort API에 의존하지 않습니다. 정상 완료 후 idle Pitch Worker를 재사용하며, 추론 취소·실패 후에는 새 Worker와 모델이 필요합니다. unmount 시 idle 모델도 정리합니다.
@@ -171,4 +171,25 @@ tests/         실제 PCM·WAV·MP3 검사
 docs/          설계 기준·현재 구현 및 다음 단계
 ```
 
-다음 단계는 실제 AnalysisResult.notes를 입력으로 Piano Roll을 구현하는 것입니다. BPM/Key 사용자 수정값은 effectiveResult에 반영됩니다. 악보 편집·성부 분리·내보내기는 이번 단계에서 구현하지 않습니다.
+다음 5단계는 Piano Roll의 WorkingNotes를 입력으로 Quantization을 추가하는 것입니다. BPM/Key 사용자 수정값은 effectiveResult에 반영됩니다. 악보 렌더링·성부 분리·내보내기는 이번 단계에서 구현하지 않습니다.
+
+## 4단계 Piano Roll Editor (0.4.0)
+
+✅ WAV / MP3 · BPM · Key · Basic Pitch · NoteEvent · Piano Roll · Note Select · Pitch Edit · Timing Edit · Duration Edit · Add/Delete · Undo/Redo
+
+❌ Quantization · MIDI · NWCTXT · 악보 렌더링 · SATB · 자동 편곡
+
+- 분석 완료 후 Piano Roll 탭에서 편집합니다. 초 단위 위치이며 BPM snap이나 quantization은 없습니다.
+- `AnalysisResult.notes`는 AI 원본입니다. `useNoteEditor`가 깊이 복제한 정렬된 `notes`가 WorkingNotes입니다. 후속 단계는 WorkingNotes를 소비해야 합니다.
+- `metadata[id]`에 origin(ai/manual), edited를 분리합니다. 직접 추가한 음표는 NoteEvent 계약상 confidence=1이지만 UI에서는 ‘직접 추가’로 표시합니다. AI 정답 확률로 표현하지 않습니다.
+- CSS 반복 배경으로 그리드, 현재 viewport의 건반/눈금/음표만 DOM 렌더링합니다. 선택 음표 한 개는 화면 밖에서도 유지해 pointer capture와 selection을 보호합니다. 전체 음역 0–127로 세로 탐색 가능하며 PC에는 최소 두 옥타브가 보입니다.
+- 음표 몸통을 드래그하면 시간/반음 이동, 양쪽 handle로 길이 조절합니다. 드래그 중 로컬 preview만 표시하고 pointerup 한 번에 history 1개를 저장합니다. Escape/pointercancel은 미리보기를 버립니다. Pointer capture로 영역 밖에서도 gesture를 마칩니다.
+- Inspector에서 MIDI/시작/길이를 즉시 입력합니다. 모든 편집은 MIDI 0–127, 시작≥0, 끝≤원본 음원 길이를 지킵니다. 길이 변경 최소 0.03초. 기존 AI의 짧은 음표는 원래 길이로 보존합니다.
+- 빈 공간을 음표 추가 모드로 클릭하면 기본 0.5초 음표 생성, manual-000001부터 단조 증가하며 삭제/Undo/AI 복원으로 ID를 재사용하지 않습니다. 새 파일/새 분석에서는 새 편집 세션이 시작됩니다.
+- Delete/Backspace로 선택 음표 삭제, Ctrl/Cmd+Z 및 Ctrl/Cmd+Shift+Z로 Undo/Redo. 입력/select/textarea/dialog에서는 편집기 단축키를 가로채지 않습니다. 한 번의 드래그는 한 기록, history는 최대 50개 immutable snapshot입니다.
+- AI 분석본 복원과 dirty 상태의 재분석에는 디자인에 맞는 native dialog를 사용합니다. 취소하면 편집본 유지, 재분석 성공 시 새 결과로 초기화합니다. 재분석 취소/실패 시 편집본 유지. BPM/Key 수정값은 기존 정책대로 보존합니다.
+- 시간 확대/축소, 음원 전체 길이와 현재 음역에 맞추는 전체 보기(건반 높이 자동 조절), 낮은 AI 음표 강도 표시 필터(30/50/70% 미만)를 제공합니다. 필터는 삭제가 아니며 직접 추가한 음표에는 AI 필터를 적용하지 않습니다.
+- AudioPlayer의 native audio element를 작은 transport API로 연결합니다. 원본 재생 중 requestAnimationFrame으로 currentTime/playing을 공유하고 seeked/timeupdate/pause/ended도 반영합니다. Timeline/빈 공간 클릭과 좌우 방향키로 원본 음원 seek, playhead 동기화. 따라가기는 기본 OFF이며 사용자가 wheel/pointer로 탐색하면 3초간 강제 follow를 억제합니다.
+- 모바일은 두 방향 스크롤, 음표 선택, 숫자 입력 중심입니다. touch drag는 명시적으로 사용하지 않으며 PC 정밀 편집을 권장합니다. 세로 확대/oscillator 미리듣기는 후속 기능입니다.
+- 편집 결과는 현재 탭 이동 중 유지하지만 새로고침 후 저장되지 않습니다. IndexedDB와 export는 아직 미구현입니다.
+- 2,000개 합성 NoteEvent의 UI 성능 검사는 테스트 전용 Worker 응답 fixture입니다. WAV/MP3 실제 Basic Pitch → Piano Roll 검사는 별도로 실제 추론을 수행하며 기존 모든 AI/BPM/Key 회귀를 유지합니다. 성능 검사는 DOM/선택 반응의 기본 검사이며 정확한 FPS나 peak RAM benchmark가 아닙니다.

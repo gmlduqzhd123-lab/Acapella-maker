@@ -3,23 +3,72 @@ import type { LoadedAudio } from "../audio/types";
 import { formatTime } from "../audio/format";
 import { Icon } from "./Icon";
 
-export function AudioPlayer({ audio }: { audio: LoadedAudio }) {
+export interface TransportState {
+  currentTime: number;
+  duration: number;
+  playing: boolean;
+}
+export function AudioPlayer({
+  audio,
+  onReady,
+  onTransport,
+}: {
+  audio: LoadedAudio;
+  onReady: (element: HTMLAudioElement | null) => void;
+  onTransport: (value: TransportState) => void;
+}) {
   const player = useRef<HTMLAudioElement>(null);
   const [current, setCurrent] = useState(0);
+  const notify = useRef(onTransport);
+  useEffect(() => {
+    notify.current = onTransport;
+  }, [onTransport]);
   const [error, setError] = useState("");
   const duration = audio.metadata.duration;
   useEffect(() => {
     const element = player.current;
+    onReady(element);
+    let frame = 0;
+    function publish() {
+      if (!element) return;
+      setCurrent(element.currentTime);
+      notify.current({
+        currentTime: element.currentTime,
+        duration: audio.metadata.duration,
+        playing: !element.paused && !element.ended,
+      });
+    }
+    function tick() {
+      publish();
+      if (element && !element.paused) frame = requestAnimationFrame(tick);
+    }
+    function play() {
+      cancelAnimationFrame(frame);
+      tick();
+    }
     if (element) {
       element.disableRemotePlayback = true;
       element.src = audio.objectUrl;
+      element.addEventListener("play", play);
+      element.addEventListener("pause", publish);
+      element.addEventListener("seeked", publish);
+      element.addEventListener("timeupdate", publish);
+      element.addEventListener("ended", publish);
+      publish();
     }
     return () => {
+      cancelAnimationFrame(frame);
+      onReady(null);
+      element?.removeEventListener("play", play);
+      element?.removeEventListener("pause", publish);
+      element?.removeEventListener("seeked", publish);
+      element?.removeEventListener("timeupdate", publish);
+      element?.removeEventListener("ended", publish);
       element?.pause();
       element?.removeAttribute("src");
       element?.load();
     };
-  }, [audio.objectUrl]);
+  }, [audio.objectUrl, audio.metadata.duration, onReady]);
   return (
     <section className="audio-player" aria-label="음원 플레이어">
       <div className="player-heading">

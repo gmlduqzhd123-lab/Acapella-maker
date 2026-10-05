@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { loadLocalAudio } from "./audio/loadAudio";
 import { AudioImportError } from "./audio/validation";
 import type { LoadedAudio } from "./audio/types";
@@ -10,6 +10,10 @@ import { PitchSummary } from "./components/PitchSummary";
 import { useMusicAnalysis } from "./analysis/useMusicAnalysis";
 import { Icon } from "./components/Icon";
 import { UploadZone } from "./components/UploadZone";
+import { useNoteEditor } from "./editor/useNoteEditor";
+import { PianoRoll } from "./components/PianoRoll/PianoRoll";
+import { ConfirmDialog } from "./components/ConfirmDialog";
+import type { TransportState } from "./components/AudioPlayer";
 import "./App.css";
 
 function App() {
@@ -17,6 +21,30 @@ function App() {
   const [audio, setAudio] = useState<LoadedAudio | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [tab, setTab] = useState<"audio" | "piano">("audio");
+  const [reanalyze, setReanalyze] = useState(false);
+  const [transport, setTransport] = useState<TransportState>({
+    currentTime: 0,
+    duration: 0,
+    playing: false,
+  });
+  const player = useRef<HTMLAudioElement>(null);
+  const onPlayerReady = useCallback((element: HTMLAudioElement | null) => {
+    player.current = element;
+  }, []);
+  const editor = useNoteEditor(
+    analysis.result?.pitch ? analysis.result.notes : null,
+    audio?.metadata.duration ?? 0,
+  );
+  function seek(time: number) {
+    if (player.current) {
+      player.current.currentTime = time;
+      setTransport((value) => ({ ...value, currentTime: time }));
+    }
+  }
+  function startAnalysis() {
+    if (audio) void analysis.start(audio.buffer);
+  }
   const activeAudio = useRef<LoadedAudio | null>(null);
   const activeJob = useRef<AbortController | null>(null);
   const busyRef = useRef(false);
@@ -44,6 +72,13 @@ function App() {
     try {
       const loaded = await loadLocalAudio(files[0], controller.signal);
       analysis.reset();
+      setTab("audio");
+      setReanalyze(false);
+      setTransport({
+        currentTime: 0,
+        duration: loaded.metadata.duration,
+        playing: false,
+      });
       if (activeAudio.current)
         URL.revokeObjectURL(activeAudio.current.objectUrl);
       activeAudio.current = loaded;
@@ -64,6 +99,9 @@ function App() {
   function removeAudio() {
     if (busyRef.current) return;
     analysis.reset();
+    setTab("audio");
+    setReanalyze(false);
+    setTransport({ currentTime: 0, duration: 0, playing: false });
     if (activeAudio.current) URL.revokeObjectURL(activeAudio.current.objectUrl);
     activeAudio.current = null;
     setAudio(null);
@@ -94,7 +132,7 @@ function App() {
             </h1>
             <p>AI가 음악을 분석하고 아카펠라 악보 초안을 만들어드립니다.</p>
             <span className="stage-tag">
-              <span /> 세 번째 단계 · AI 음표 분석
+              <span /> 네 번째 단계 · Piano Roll 편집
             </span>
           </div>
           <button
@@ -150,16 +188,33 @@ function App() {
           </aside>
           <section className="editor-panel panel">
             <div className="editor-toolbar">
-              <div>
-                <span className="tab active">음원 · 음악 분석</span>
-                <span className="tab upcoming">
-                  Piano Roll <small>준비 중</small>
-                </span>
+              <div
+                className="editor-tabs"
+                role="tablist"
+                aria-label="작업 화면"
+              >
+                <button
+                  role="tab"
+                  aria-selected={tab === "audio"}
+                  className={`tab ${tab === "audio" ? "active" : ""}`}
+                  onClick={() => setTab("audio")}
+                >
+                  음원 · 음악 분석
+                </button>
+                <button
+                  role="tab"
+                  aria-selected={tab === "piano"}
+                  disabled={!analysis.result?.pitch}
+                  className={`tab ${tab === "piano" ? "active" : ""}`}
+                  onClick={() => setTab("piano")}
+                >
+                  Piano Roll
+                </button>
                 <span className="tab upcoming">
                   악보 <small>준비 중</small>
                 </span>
               </div>
-              <span className="tiny-tag">STEP 03</span>
+              <span className="tiny-tag">STEP 04</span>
             </div>
             <div className={`editor-body ${audio ? "has-audio" : ""}`}>
               <AnalysisControls
@@ -169,7 +224,8 @@ function App() {
                 importing={busy}
                 error={analysis.error}
                 onStart={() => {
-                  if (audio) void analysis.start(audio.buffer);
+                  if (editor.dirty) setReanalyze(true);
+                  else startAnalysis();
                 }}
                 onCancel={analysis.cancel}
               />
@@ -185,22 +241,58 @@ function App() {
                   </button>
                 </div>
               )}
-              <UploadZone
-                onFiles={(files) => {
-                  void importFiles(files);
-                }}
-                busy={busy}
-              />
-              {audio ? (
-                <AudioPlayer key={audio.objectUrl} audio={audio} />
-              ) : (
-                <div className="audio-empty">
-                  <Icon name="headphones" />
-                  <div>
-                    <strong>모든 편곡은 한 번의 듣기에서 시작됩니다.</strong>
-                    <p>음원을 불러오면 여기에서 재생할 수 있어요.</p>
+              <div hidden={tab !== "audio"}>
+                <UploadZone
+                  onFiles={(files) => {
+                    void importFiles(files);
+                  }}
+                  busy={busy}
+                />
+                {audio ? (
+                  <AudioPlayer
+                    key={audio.objectUrl}
+                    audio={audio}
+                    onReady={onPlayerReady}
+                    onTransport={setTransport}
+                  />
+                ) : (
+                  <div className="audio-empty">
+                    <Icon name="headphones" />
+                    <div>
+                      <strong>모든 편곡은 한 번의 듣기에서 시작됩니다.</strong>
+                      <p>음원을 불러오면 여기에서 재생할 수 있어요.</p>
+                    </div>
                   </div>
-                </div>
+                )}
+              </div>
+              {tab === "piano" && audio && analysis.result?.pitch && (
+                <>
+                  <button
+                    className="button"
+                    onClick={() => {
+                      if (player.current?.paused)
+                        void player.current
+                          .play()
+                          .catch(() =>
+                            setError(
+                              "재생하지 못했습니다. 음원 화면에서 다시 시도해 주세요.",
+                            ),
+                          );
+                      else player.current?.pause();
+                    }}
+                  >
+                    {transport.playing
+                      ? "원본 음원 일시정지"
+                      : "원본 음원 재생"}
+                  </button>
+                  <PianoRoll
+                    editor={editor}
+                    disabled={busy || analysis.busy}
+                    currentTime={transport.currentTime}
+                    playing={transport.playing}
+                    seek={seek}
+                  />
+                </>
               )}
               <PitchSummary result={analysis.result} />
               {audio && (
@@ -250,11 +342,12 @@ function App() {
                   <em>지금 사용 가능</em>
                 </div>
               </li>
-              <li>
+              <li className="current">
                 <span>03</span>
                 <div>
                   <strong>음표 편집</strong>
-                  <p>Piano Roll · Quantization</p>
+                  <p>Piano Roll · 음표 직접 수정</p>
+                  <em>지금 사용 가능</em>
                 </div>
               </li>
               <li>
@@ -280,6 +373,17 @@ function App() {
           <span>LOCAL FIRST · NO CLOUD UPLOAD</span>
         </footer>
       </main>
+      {reanalyze && (
+        <ConfirmDialog
+          message="현재 수정한 음표가 있습니다. 다시 분석하면 음표 편집 내용이 초기화됩니다."
+          action="다시 분석"
+          onCancel={() => setReanalyze(false)}
+          onConfirm={() => {
+            setReanalyze(false);
+            startAnalysis();
+          }}
+        />
+      )}
     </div>
   );
 }
