@@ -20,9 +20,9 @@ async function observePitch(page: Page) {
     };
   });
 }
-async function complete(page: Page) {
+async function complete(page: Page, timeout = 160_000) {
   await expect(page.getByRole("status")).toHaveText("음악 분석 완료", {
-    timeout: 160_000,
+    timeout,
   });
   return page.evaluate(
     () => (window as unknown as { observedPitch: PitchResult }).observedPitch,
@@ -300,7 +300,7 @@ test("30/60/180-second actual inference has bounded tensor memory, playback, scr
       { timeout: 30_000 },
     );
     await page.mouse.wheel(0, 300);
-    const result = await complete(page);
+    const result = await complete(page, 480_000);
     const timing = await page.evaluate(() => {
       const state = (
         window as unknown as {

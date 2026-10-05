@@ -131,6 +131,8 @@ Pitch 검사는 attack/decay/harmonics가 있는 직접 생성한 C4→E4→G4�
 
 10초 WAV/MP3 두 검사 평균 Pitch 시간은 1.123초, 평균 첫 모델 준비(dynamic import 포함)는 약 118 ms입니다. 구간 처리 전후 tensor 수는 245개로 동일했습니다. 분석 중 최대 rAF 간격은 30·60·180초 검사에서 각각 약 67·83·50 ms였습니다. 이것은 텐서 수·화면 응답성 근거이며 최대 RAM/VRAM 사용량 측정은 아닙니다. 무음 검출은 0개, CPU 대체 실행도 실제 추론으로 검증했습니다. 화음의 추가 MIDI 86처럼 불필요한 음표가 나올 수 있습니다.
 
+GitHub headless Chromium의 WebGL 측정에서는 동일한 10초 WAV/MP3 추론이 각각 18.99·18.98초였습니다. 검출 MIDI·음표 수·tensor 수는 동일했습니다. 환경에 따른 시간 차이를 반영해 기존 BPM/Key 회귀의 전체 추론 대기시간은 120초, 3분 검사 대기시간은 480초로 조정했습니다. 실제 검출·시간 범위·메모리·화면 응답성·진행률·네트워크 assertion은 그대로 유지합니다.
+
 ## GitHub Pages 배포
 
 [저장소](https://github.com/gmlduqzhd123-lab/Acapella-maker) · [서비스](https://gmlduqzhd123-lab.github.io/Acapella-maker/)

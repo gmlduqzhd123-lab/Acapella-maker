@@ -79,7 +79,7 @@ for (const file of [musicWav, musicMp3]) {
       .getByRole("button", { name: "음악 분석 시작", exact: true })
       .click();
     await expect(page.getByRole("status")).toHaveText("음악 분석 완료", {
-      timeout: 20000,
+      timeout: 120_000,
     });
     const automaticBpm = await page
       .getByRole("button", { name: "BPM 수정" })
