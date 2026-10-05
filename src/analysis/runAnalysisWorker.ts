@@ -9,7 +9,7 @@ export function runAnalysisWorker(
   input: AnalysisInput,
   signal: AbortSignal,
   onProgress: (progress: AnalysisProgress) => void,
-): Promise<AnalysisResult> {
+): Promise<{ result: AnalysisResult; input: AnalysisInput }> {
   signal.throwIfAborted();
   return new Promise((resolve, reject) => {
     let worker: Worker;
@@ -53,7 +53,7 @@ export function runAnalysisWorker(
       if (message.type === "progress") onProgress(message.progress);
       if (message.type === "complete") {
         cleanup();
-        resolve(message.result);
+        resolve({ result: message.result, input: message.input });
       }
       if (message.type === "error") {
         cleanup();

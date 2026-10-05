@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createAnalysisInput } from "./createAnalysisInput";
 import { runAnalysisWorker } from "./runAnalysisWorker";
 import { effectiveResult } from "./effectiveResult";
+import { PitchWorkerClient } from "../pitch/pitchWorkerClient";
 import type {
   AnalysisOverrides,
   AnalysisProgress,
@@ -23,11 +24,14 @@ export function useMusicAnalysis() {
   const [error, setError] = useState("");
   const job = useRef<AbortController | null>(null);
   const generation = useRef(0);
+  const pitch = useRef<PitchWorkerClient | null>(null);
   useEffect(
     () => () => {
       generation.current++;
       job.current?.abort();
       job.current = null;
+      pitch.current?.dispose();
+      pitch.current = null;
     },
     [],
   );
@@ -65,7 +69,7 @@ export function useMusicAnalysis() {
         controller.signal,
         (fraction) => {
           if (version === generation.current)
-            setProgress({ phase: "preparing", fraction: fraction * 0.1 });
+            setProgress({ phase: "preparing", fraction: fraction * 0.05 });
         },
       );
       if (version !== generation.current) return;
@@ -74,12 +78,30 @@ export function useMusicAnalysis() {
         input,
         controller.signal,
         (value) => {
+          if (version === generation.current)
+            setProgress({
+              phase: value.phase === "complete" ? "key" : value.phase,
+              fraction: 0.05 + 0.3 * value.fraction,
+            });
+        },
+      );
+      if (version !== generation.current) return;
+      // BPM/Key remain usable if the AI model fails. Reanalysis preserves manual choices.
+      setResult((current) => current ?? next.result);
+      pitch.current ??= new PitchWorkerClient();
+      const detected = await pitch.current.run(
+        next.input,
+        controller.signal,
+        (value) => {
           if (version === generation.current) setProgress(value);
         },
       );
       if (version !== generation.current) return;
-      setResult(next);
-      setOverrides({ bpm: null, key: null });
+      setResult({
+        ...next.result,
+        notes: detected.notes,
+        pitch: detected.metadata,
+      });
       setStatus("complete");
       setProgress({ phase: "complete", fraction: 1 });
     } catch (reason) {

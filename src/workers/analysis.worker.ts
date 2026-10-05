@@ -11,7 +11,13 @@ self.onmessage = (event: MessageEvent<AnalysisWorkerRequest>) => {
     const result = analyzeMusic(request.input, (progress) =>
       send({ type: "progress", id: request.id, progress }),
     );
-    send({ type: "complete", id: request.id, result });
+    const message: AnalysisWorkerResponse = {
+      type: "complete",
+      id: request.id,
+      result,
+      input: request.input,
+    };
+    self.postMessage(message, { transfer: [request.input.samples.buffer] });
   } catch (reason) {
     send({
       type: "error",

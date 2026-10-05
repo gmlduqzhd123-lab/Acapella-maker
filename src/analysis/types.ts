@@ -1,4 +1,5 @@
 import type { MusicalKey, NoteEvent } from "../music/types";
+import type { PitchMetadata } from "../pitch/pitchTypes";
 export interface AnalysisInput {
   samples: Float32Array;
   sampleRate: number;
@@ -10,6 +11,7 @@ export interface AnalysisResult {
   bpmConfidence: number;
   key: MusicalKey | null;
   notes: NoteEvent[];
+  pitch?: PitchMetadata;
   tempoCandidates: TempoCandidate[];
   keyCandidates: KeyCandidate[];
   chroma: number[];
@@ -24,7 +26,7 @@ export type AnalysisStatus =
   | "cancelled"
   | "error";
 export interface AnalysisProgress {
-  phase: "preparing" | "bpm" | "key" | "pitch" | "complete";
+  phase: "preparing" | "bpm" | "key" | "model" | "pitch" | "notes" | "complete";
   /** Overall completion, always 0–1. */
   fraction: number;
 }
@@ -58,5 +60,10 @@ export type AnalysisWorkerRequest = {
 };
 export type AnalysisWorkerResponse =
   | { type: "progress"; id: string; progress: AnalysisProgress }
-  | { type: "complete"; id: string; result: AnalysisResult }
+  | {
+      type: "complete";
+      id: string;
+      result: AnalysisResult;
+      input: AnalysisInput;
+    }
   | { type: "error"; id: string; message: string };

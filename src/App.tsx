@@ -6,6 +6,7 @@ import { AudioPlayer } from "./components/AudioPlayer";
 import { FileInfo } from "./components/FileInfo";
 import { AnalysisControls } from "./components/AnalysisControls";
 import { AnalysisResults } from "./components/AnalysisResults";
+import { PitchSummary } from "./components/PitchSummary";
 import { useMusicAnalysis } from "./analysis/useMusicAnalysis";
 import { Icon } from "./components/Icon";
 import { UploadZone } from "./components/UploadZone";
@@ -93,7 +94,7 @@ function App() {
             </h1>
             <p>AI가 음악을 분석하고 아카펠라 악보 초안을 만들어드립니다.</p>
             <span className="stage-tag">
-              <span /> 두 번째 단계 · 음악 분석
+              <span /> 세 번째 단계 · AI 음표 분석
             </span>
           </div>
           <button
@@ -158,7 +159,7 @@ function App() {
                   악보 <small>준비 중</small>
                 </span>
               </div>
-              <span className="tiny-tag">STEP 02</span>
+              <span className="tiny-tag">STEP 03</span>
             </div>
             <div className={`editor-body ${audio ? "has-audio" : ""}`}>
               <AnalysisControls
@@ -201,13 +202,21 @@ function App() {
                   </div>
                 </div>
               )}
+              <PitchSummary result={analysis.result} />
+              {audio && (
+                <p className="pitch-length-note">
+                  Pitch 분석은 긴 곡에서 시간이 걸릴 수 있습니다. 먼저 3분 이내
+                  음원으로 확인해 보세요. 모델 파일만 이 사이트에서 내려받으며
+                  음악은 전송하지 않습니다.
+                </p>
+              )}
             </div>
             <div className="editor-footer">
               <span className="status-dot" />
               {busy
                 ? "브라우저에서 음원 처리 중…"
                 : analysis.busy
-                  ? "브라우저에서 BPM · Key 분석 중…"
+                  ? "브라우저에서 BPM · Key · AI 음표 분석 중…"
                   : analysis.status === "complete"
                     ? "음악 분석 완료 · 자동 분석 결과를 확인해 주세요."
                     : audio
@@ -237,7 +246,7 @@ function App() {
                 <span>02</span>
                 <div>
                   <strong>음악 분석</strong>
-                  <p>BPM · Key 자동 분석</p>
+                  <p>BPM · Key · AI 음표 분석</p>
                   <em>지금 사용 가능</em>
                 </div>
               </li>
@@ -245,7 +254,7 @@ function App() {
                 <span>03</span>
                 <div>
                   <strong>음표 편집</strong>
-                  <p>Pitch · Piano Roll · Quantization</p>
+                  <p>Piano Roll · Quantization</p>
                 </div>
               </li>
               <li>

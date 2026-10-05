@@ -33,7 +33,7 @@ export function AnalysisResults({
 
   const before = hasAudio ? "분석 전" : "—";
   const bpmText = busy
-    ? progress.phase === "key" || progress.phase === "complete"
+    ? !["preparing", "bpm"].includes(progress.phase)
       ? "처리 완료"
       : "분석 중…"
     : effective
@@ -44,7 +44,9 @@ export function AnalysisResults({
   const keyText = busy
     ? progress.phase === "key"
       ? "분석 중…"
-      : "대기 중"
+      : ["model", "pitch", "notes", "complete"].includes(progress.phase)
+        ? "처리 완료"
+        : "대기 중"
     : effective
       ? effective.key
         ? keyName(effective.key)
@@ -235,8 +237,8 @@ export function AnalysisResults({
             ))}
           </details>
           <p className="muted-note">
-            신뢰도는 분석 근거의 강도이며 정답 확률이 아닙니다. Pitch 분석은
-            다음 단계입니다.
+            신뢰도는 분석 근거의 강도이며 정답 확률이 아닙니다. 자동 결과를 직접
+            확인해 주세요.
           </p>
         </>
       )}

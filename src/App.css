@@ -1006,3 +1006,83 @@ main {
     font-size: 10px;
   }
 }
+.model-status,
+.pitch-length-note,
+.pitch-disclaimer,
+.pitch-performance p,
+.pitch-range-detail {
+  font-size: 12px;
+  line-height: 1.8;
+  color: #748176;
+}
+.analysis-steps {
+  flex-wrap: wrap;
+}
+.pitch-summary {
+  padding: 24px;
+  border: 1px solid #dde4d2;
+  border-radius: 12px;
+  background: #fafbf7;
+}
+.pitch-summary h2 {
+  margin: 10px 0 20px;
+  font-size: 18px;
+  color: #274c40;
+}
+.pitch-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.pitch-metrics div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pitch-metrics span {
+  font-size: 11px;
+  color: #748176;
+}
+.pitch-metrics strong {
+  font-size: 19px;
+  color: #355847;
+}
+.note-inspector,
+.pitch-performance {
+  margin-top: 16px;
+  font-size: 12px;
+  color: #52663c;
+}
+.note-inspector summary,
+.pitch-performance summary {
+  cursor: pointer;
+}
+.note-table-scroll {
+  overflow-x: auto;
+  margin-top: 12px;
+}
+.note-inspector table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.note-inspector th,
+.note-inspector td {
+  text-align: left;
+  padding: 9px 5px;
+  border-bottom: 1px solid #e3e8dc;
+}
+.pitch-empty {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #52663c;
+}
+@media (max-width: 600px) {
+  .pitch-summary {
+    padding: 18px;
+  }
+  .pitch-metrics {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}

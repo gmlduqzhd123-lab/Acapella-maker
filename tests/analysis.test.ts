@@ -112,7 +112,7 @@ test("silence and a single sine wave do not produce fabricated BPM or key", () =
   assert.equal(tone.key, null);
   assert.deepEqual(tone.notes, []);
 });
-test("complete result preserves empty notes; progress is monotonic 0–1; manual values override automatic score inputs", () => {
+test("BPM/Key intermediate result preserves empty notes; progress is monotonic 0–1; manual values override automatic score inputs", () => {
   const steps: AnalysisProgress[] = [];
   const result = analyzeMusic(chordTrack(), (progress) => steps.push(progress));
   assert.notEqual(result.bpm, null);

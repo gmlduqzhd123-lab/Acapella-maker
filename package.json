@@ -1,9 +1,11 @@
 {
   "name": "acascore-ai",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/sync-basic-pitch-model.mjs",
+    "prebuild": "node scripts/sync-basic-pitch-model.mjs",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
@@ -13,6 +15,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@spotify/basic-pitch": "1.0.1",
+    "@tensorflow/tfjs": "3.21.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

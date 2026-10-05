@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { chordTrack, pcmWav } from "./musicSignals";
 import { makeMp3, makeWav } from "./fixtures";
+test.setTimeout(180_000);
 const cMajor = chordTrack();
 const musicWav = {
   name: "코드 진행.wav",
@@ -39,7 +40,10 @@ for (const file of [musicWav, musicMp3]) {
         constructor(url: string | URL, options?: WorkerOptions) {
           super(url, options);
           this.addEventListener("message", (event) => {
-            if (event.data?.type === "complete")
+            if (
+              String(url).includes("analysis.worker") &&
+              event.data?.type === "complete"
+            )
               (
                 window as unknown as { observedAnalysis: unknown }
               ).observedAnalysis = event.data.result;
@@ -100,7 +104,9 @@ for (const file of [musicWav, musicMp3]) {
           }
         ).observedAnalysis,
     );
+    // The BPM/Key worker reports an intermediate result; the UI completes only after real Pitch.
     expect(observed.notes).toEqual([]);
+    await expect(page.getByTestId("note-count")).not.toHaveText("0개");
     console.log(
       JSON.stringify({
         fileAnalysis: file.name,
@@ -212,10 +218,17 @@ test("ten-minute real PCM: responsive UI, measured progress, cancel Worker, repl
           .evaluate((progress: HTMLProgressElement) => progress.value),
       { timeout: 30000, intervals: [50, 100, 150] },
     )
-    .toBeGreaterThan(0.25);
+    .toBeGreaterThan(0.12);
   await page.getByRole("button", { name: "분석 취소", exact: true }).click();
   await expect(page.getByRole("status")).toHaveText("분석을 취소했습니다.");
-  await expect.poll(() => page.workers().length).toBe(0);
+  await expect
+    .poll(
+      () =>
+        page
+          .workers()
+          .filter((worker) => worker.url().includes("analysis.worker")).length,
+    )
+    .toBe(0);
   const timing = await page.evaluate(
     () =>
       (
@@ -264,11 +277,20 @@ test("ten-minute real PCM: responsive UI, measured progress, cancel Worker, repl
   await expect(page.getByRole("button", { name: "BPM 수정" })).toHaveText(
     "분석 전",
   );
-  await expect.poll(() => page.workers().length).toBe(0);
+  await expect
+    .poll(
+      () =>
+        page
+          .workers()
+          .filter((worker) => worker.url().includes("analysis.worker")).length,
+    )
+    .toBe(0);
   await page
     .getByRole("button", { name: "음악 분석 시작", exact: true })
     .click();
-  await expect(page.getByRole("status")).toHaveText("음악 분석 완료");
+  await expect(page.getByRole("status")).toHaveText("음악 분석 완료", {
+    timeout: 120_000,
+  });
   await expect(page.getByRole("button", { name: "Key 수정" })).toHaveText(
     "G Major",
   );
@@ -297,7 +319,15 @@ test("ten-minute real PCM: responsive UI, measured progress, cancel Worker, repl
     page.getByRole("button", { name: "음악 분석 시작", exact: true }),
   ).toBeDisabled();
   await expect(page.locator("audio")).toHaveCount(0);
-  await expect.poll(() => page.workers().length).toBe(0);
+  // An idle Pitch worker retains the model across files; only active analysis must stop.
+  await expect
+    .poll(
+      () =>
+        page
+          .workers()
+          .filter((worker) => worker.url().includes("analysis.worker")).length,
+    )
+    .toBe(0);
   await expect(page.getByRole("alert")).toHaveCount(0);
 });
 
@@ -305,18 +335,18 @@ test("silent audio has no invented values, supports manual values, and next impo
   page,
 }) => {
   await page.goto("./");
-  await page
-    .getByLabel("음악 파일 선택", { exact: true })
-    .setInputFiles({
-      name: "silence.wav",
-      mimeType: "audio/wav",
-      buffer: makeWav(4, 22050, 1, true),
-    });
+  await page.getByLabel("음악 파일 선택", { exact: true }).setInputFiles({
+    name: "silence.wav",
+    mimeType: "audio/wav",
+    buffer: makeWav(4, 22050, 1, true),
+  });
   await expect(page.locator(".filename")).toHaveText("silence.wav");
   await page
     .getByRole("button", { name: "음악 분석 시작", exact: true })
     .click();
-  await expect(page.getByRole("status")).toHaveText("음악 분석 완료");
+  await expect(page.getByRole("status")).toHaveText("음악 분석 완료", {
+    timeout: 120_000,
+  });
   await expect(page.getByRole("button", { name: "BPM 수정" })).toHaveText(
     "추정 불가",
   );

@@ -88,3 +88,31 @@ export function pcmWav(input: AnalysisInput): Buffer {
     );
   return result;
 }
+/** Directly authored plucked tones with attack, decay, release and harmonics. */
+export function pitchTrack(seconds = 10, polyphonic = false): AnalysisInput {
+  const sampleRate = 22050,
+    samples = new Float32Array(Math.round(seconds * sampleRate));
+  const melody = [60, 64, 67, 72];
+  for (let start = 0.35, step = 0; start < seconds - 0.4; start += 2, step++) {
+    const pitches = polyphonic ? [60, 64, 67] : [melody[step % melody.length]];
+    const length = Math.min(1.45, seconds - start);
+    for (let index = 0; index < Math.floor(length * sampleRate); index++) {
+      const t = index / sampleRate;
+      const envelope =
+        Math.min(1, t / 0.008) *
+        Math.exp(-1.3 * t) *
+        Math.min(1, (length - t) / 0.06);
+      let value = 0;
+      for (const midi of pitches) {
+        const frequency = 440 * 2 ** ((midi - 69) / 12);
+        value +=
+          Math.sin(2 * Math.PI * frequency * t) +
+          0.3 * Math.sin(4 * Math.PI * frequency * t) +
+          0.1 * Math.sin(6 * Math.PI * frequency * t);
+      }
+      samples[Math.round(start * sampleRate) + index] =
+        value * envelope * (polyphonic ? 0.18 : 0.6);
+    }
+  }
+  return { samples, sampleRate, duration: seconds };
+}

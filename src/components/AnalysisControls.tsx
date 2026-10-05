@@ -27,12 +27,19 @@ export function AnalysisControls({
         : status === "error"
           ? "분석을 다시 시도해 주세요."
           : hasAudio
-            ? "BPM과 Key를 자동으로 분석합니다."
+            ? "BPM · Key · AI 음표를 자동으로 분석합니다."
             : "음원을 먼저 불러와 주세요.";
-  const phases = ["preparing", "bpm", "key"] as const;
+  const phases = [
+    "preparing",
+    "bpm",
+    "key",
+    "model",
+    "pitch",
+    "notes",
+  ] as const;
   const phaseIndex =
     progress.phase === "complete"
-      ? 3
+      ? phases.length
       : phases.indexOf(progress.phase as (typeof phases)[number]);
   return (
     <section className="analysis-controls" aria-label="음악 분석">
@@ -59,7 +66,14 @@ export function AnalysisControls({
       {busy && (
         <div className="analysis-progress">
           <div className="analysis-steps">
-            {["음원 준비", "BPM 분석", "Key 분석"].map((label, index) => (
+            {[
+              "음원 준비",
+              "BPM 분석",
+              "Key 분석",
+              "AI 음표 모델",
+              "Pitch 분석",
+              "음표 정리",
+            ].map((label, index) => (
               <span
                 className={index === phaseIndex ? "in-progress" : ""}
                 key={label}
@@ -69,6 +83,17 @@ export function AnalysisControls({
               </span>
             ))}
           </div>
+          {progress.phase === "model" && (
+            <p className="model-status">
+              AI 음표 모델을 준비하고 있습니다… 모델 파일만 현재 사이트에서
+              가져옵니다.
+            </p>
+          )}
+          {(progress.phase === "pitch" || progress.phase === "notes") && (
+            <p className="model-status">
+              AI 음표 모델 준비 완료 · 음악은 내 기기에서 분석합니다.
+            </p>
+          )}
           <div className="progress-row">
             <progress
               aria-label="음악 분석 진행률"
