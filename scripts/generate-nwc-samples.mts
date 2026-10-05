@@ -33,7 +33,7 @@ for (const timeSignature of ["4/4", "3/4", "6/8"] as TimeSignatureName[]) {
       confidence: 1,
     });
   add(48, -480, 480); // pickup bass eighth
-  add(48, 0, 7680); // whole-note bass, tied across bars
+  add(48, 0, 19200); // sustained bass keeps a Bass-clef lane through all examples
   [60, 62, 64, 65, 67, 69, 71, 72].forEach((midi, i) =>
     add(midi, i * 960, 960),
   );
