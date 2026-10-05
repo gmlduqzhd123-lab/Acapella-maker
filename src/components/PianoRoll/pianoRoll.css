@@ -3,6 +3,142 @@
   margin-top: 16px;
   color: #355847;
 }
+.quant-panel {
+  border: 1px solid #dce3d2;
+  border-radius: 12px;
+  padding: 14px;
+  margin: 12px 0;
+  background: #fafbf6;
+}
+.quant-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+}
+.quant-title h3 {
+  margin: 0;
+  font-size: 15px;
+}
+.quant-settings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+  margin: 12px 0;
+  font-size: 11px;
+}
+.quant-settings label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.quant-settings input[type="number"] {
+  width: 105px;
+}
+.quant-settings select,
+.quant-settings input[type="number"] {
+  padding: 7px;
+  border: 1px solid #bac9ae;
+  border-radius: 5px;
+  color: #355847;
+  background: #fff;
+  max-width: 100%;
+}
+.quant-settings .button {
+  padding: 8px;
+  font-size: 11px;
+}
+.quant-help,
+.quant-warning {
+  font-size: 11px;
+  line-height: 1.7;
+}
+.quant-warning {
+  color: #915a30;
+}
+.quant-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.quant-actions .button {
+  font-size: 11px;
+  padding: 8px 10px;
+}
+.quant-result {
+  margin-top: 15px;
+  font-size: 11px;
+  line-height: 1.8;
+}
+.quant-result table {
+  width: 100%;
+  border-collapse: collapse;
+  white-space: nowrap;
+}
+.quant-result td,
+.quant-result th {
+  padding: 5px;
+  text-align: left;
+  border-bottom: 1px solid #e3e8dc;
+}
+.quant-result details {
+  margin-top: 8px;
+}
+.quant-result summary {
+  cursor: pointer;
+}
+.pr-beat-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.pr-music-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  pointer-events: none;
+  width: 1px;
+}
+.pr-music-line.subdivision-line {
+  background: #6f8a5626;
+}
+.pr-music-line.beat-line {
+  background: #5a785066;
+}
+.pr-music-line.measure-line {
+  width: 2px;
+  background: #476943aa;
+}
+.pr-timeline.has-rhythm > span {
+  padding-top: 18px;
+  font-size: 8px;
+}
+.pr-measure-label {
+  position: absolute;
+  top: 2px;
+  font-size: 10px;
+  white-space: nowrap;
+  color: #355847;
+  padding-left: 3px;
+}
+.pr-ghost {
+  position: absolute;
+  pointer-events: none;
+  border: 2px dashed #436aae;
+  background: #6988ce38;
+  border-radius: 4px;
+  z-index: 4;
+}
+.pr-ghost.review {
+  border-color: #b08532;
+  background: #c8a34130;
+}
+.pr-ghost.warning {
+  border-color: #bd6450;
+  background: #d6815330;
+}
 .pr-toolbar {
   background: #f4f6ee;
   border: 1px solid #dce3d2;

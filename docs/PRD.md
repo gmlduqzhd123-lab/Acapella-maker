@@ -138,3 +138,16 @@ AnalysisResult는 nullable bpm/key, bpmConfidence, 실제 notes, tempoCandidates
 - bounds/ID/sort/selection 보호, 모바일 스크롤 및 정밀 입력, 키보드 접근
 - 실제 WAV/MP3 추론→편집 E2E 및 2,000개 별도 UI 성능 검사, 기존 AI/BPM/Key 회귀 유지
 - 후속 Quantization/MIDI/NWCTXT는 WorkingNotes를 사용. 이번 단계는 해당 알고리즘·export를 구현하지 않음.
+
+## 5단계 완료 기준 / 0.5.0
+
+- 기존 구조를 확장하여 PPQ960·초/tick 변환·effective BPM·4/4·3/4·6/8과 BPM 단위 제공
+- grid origin 초 입력·현재 원본 재생 위치·±10/50ms, 음수 tick/measure pickup 보존
+- quarter/eighth/sixteenth/32nd와 약50%/표준100%/강100%+삭제 후보 경고
+- 원본/WorkingNotes를 바꾸지 않는 ghost preview, cancel, 설정/음표 변경 시 동기적 stale 방지
+- 같은 ID로 전체 적용을 Undo 1회로 묶고 AI 원본과 manual metadata 보존
+- 독립 Snap 기본 OFF, 미래 몸통 이동·양쪽 Resize만 정렬, viewport 박자선·마디 숫자·마디/박 playhead
+- 음가/점음표 데이터, 표기 전용 tie segments, 단성 findGaps; polyphonic 입력에 자동 쉼표/성부 없음
+- 경계/짧은 음표/겹침/혼잡/마디선 경고 및 통계. 삭제·병합을 자동 수행하지 않음
+- 2,000/10,000 pure 함수 검사, 2,000 UI preview 검사, 실제 Basic Pitch→Quantization 및 모바일 E2E 추가
+- 다음 MIDI/NWCTXT 입력을 준비하되 이번 단계에는 exporter·오선보·SATB·storage·backend를 구현하지 않음

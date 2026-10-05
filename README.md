@@ -2,7 +2,7 @@
 
 듣던 음악을, 부를 수 있는 악보로.
 
-React · TypeScript · Vite 기반 GitHub Pages 전용 정적 웹앱입니다. 현재 릴리스는 **0.4.0: 실제 NoteEvent Piano Roll Editor**입니다. AI가 초안을 만들고 사람이 음악을 완성합니다.
+React · TypeScript · Vite 기반 GitHub Pages 전용 정적 웹앱입니다. 현재 릴리스는 **0.5.0: Piano Roll Quantization**입니다. AI가 초안을 만들고 사람이 음악을 완성합니다.
 
 ## 실제 구현 상태
 
@@ -20,7 +20,7 @@ React · TypeScript · Vite 기반 GitHub Pages 전용 정적 웹앱입니다. �
 - 무음·단일음·근거 부족은 “추정 불가” 표시와 직접 입력 안내
 - 오류 복구·모바일 UI·GitHub Pages 하위 경로
 
-**아직 구현하지 않은 기능:** Quantization, 악보 렌더링·MIDI·NWCTXT·MusicXML 내보내기, SATB 성부 분리·자동 편곡·Source Separation, IndexedDB, YouTube, M4A·OGG·MP4 지원. Basic Pitch는 SATB 분리기가 아니며 모든 감지 음표는 하나의 polyphonic note cloud입니다.
+**아직 구현하지 않은 기능:** 악보 렌더링·MIDI·NWCTXT·MusicXML 내보내기, SATB 성부 분리·자동 편곡·Source Separation, IndexedDB, YouTube, M4A·OGG·MP4 지원. Basic Pitch는 SATB 분리기가 아니며 모든 감지 음표는 하나의 polyphonic note cloud입니다.
 
 ## 로컬 실행과 검사
 
@@ -162,6 +162,8 @@ src/
   analysis/    PCM 준비·FFT·BPM·Key·Worker 실행·수정값 계약
   pitch/       공식 모델 로더·구간별 추론·NoteEvent mapper·캐시 Worker client
   music/       NoteEvent·MusicalKey·일반적인 조표 이름
+  editor/      AI 원본과 WorkingNotes 분리·history·편집 범위 보호
+  quantization/ PPQ·초/tick·박자표·grid·음가·tie·preview·issues·Snap
   score/       후속 ScoreData 계약
   export/      후속 ScoreExporter 계약
   storage/     후속 ProjectData 계약
@@ -171,15 +173,15 @@ tests/         실제 PCM·WAV·MP3 검사
 docs/          설계 기준·현재 구현 및 다음 단계
 ```
 
-다음 5단계는 Piano Roll의 WorkingNotes를 입력으로 Quantization을 추가하는 것입니다. BPM/Key 사용자 수정값은 effectiveResult에 반영됩니다. 악보 렌더링·성부 분리·내보내기는 이번 단계에서 구현하지 않습니다.
+다음 단계는 WorkingNotes와 유효한 박자 정리 결과를 입력으로 MIDI/NWCTXT를 구현하는 것입니다. 악보 렌더링·성부 분리·내보내기는 현재 구현하지 않습니다.
 
 ## 4단계 Piano Roll Editor (0.4.0)
 
 ✅ WAV / MP3 · BPM · Key · Basic Pitch · NoteEvent · Piano Roll · Note Select · Pitch Edit · Timing Edit · Duration Edit · Add/Delete · Undo/Redo
 
-❌ Quantization · MIDI · NWCTXT · 악보 렌더링 · SATB · 자동 편곡
+4단계 당시 미구현: Quantization · MIDI · NWCTXT · 악보 렌더링 · SATB · 자동 편곡. Quantization은 아래 5단계에서 추가했습니다.
 
-- 분석 완료 후 Piano Roll 탭에서 편집합니다. 초 단위 위치이며 BPM snap이나 quantization은 없습니다.
+- 분석 완료 후 Piano Roll 탭에서 편집합니다. 초 단위 자유 편집을 유지하며 5단계의 Snap은 기본 OFF입니다.
 - `AnalysisResult.notes`는 AI 원본입니다. `useNoteEditor`가 깊이 복제한 정렬된 `notes`가 WorkingNotes입니다. 후속 단계는 WorkingNotes를 소비해야 합니다.
 - `metadata[id]`에 origin(ai/manual), edited를 분리합니다. 직접 추가한 음표는 NoteEvent 계약상 confidence=1이지만 UI에서는 ‘직접 추가’로 표시합니다. AI 정답 확률로 표현하지 않습니다.
 - CSS 반복 배경으로 그리드, 현재 viewport의 건반/눈금/음표만 DOM 렌더링합니다. 선택 음표 한 개는 화면 밖에서도 유지해 pointer capture와 selection을 보호합니다. 전체 음역 0–127로 세로 탐색 가능하며 PC에는 최소 두 옥타브가 보입니다.
@@ -193,3 +195,38 @@ docs/          설계 기준·현재 구현 및 다음 단계
 - 모바일은 두 방향 스크롤, 음표 선택, 숫자 입력 중심입니다. touch drag는 명시적으로 사용하지 않으며 PC 정밀 편집을 권장합니다. 세로 확대/oscillator 미리듣기는 후속 기능입니다.
 - 편집 결과는 현재 탭 이동 중 유지하지만 새로고침 후 저장되지 않습니다. IndexedDB와 export는 아직 미구현입니다.
 - 2,000개 합성 NoteEvent의 UI 성능 검사는 테스트 전용 Worker 응답 fixture입니다. WAV/MP3 실제 Basic Pitch → Piano Roll 검사는 별도로 실제 추론을 수행하며 기존 모든 AI/BPM/Key 회귀를 유지합니다. 성능 검사는 DOM/선택 반응의 기본 검사이며 정확한 FPS나 peak RAM benchmark가 아닙니다.
+
+## 5단계 Quantization (0.5.0)
+
+✅ WAV / MP3 · BPM · Key · Basic Pitch · NoteEvent · Piano Roll · 선택/이동/양쪽 Resize · Inspector · 추가/삭제 · Undo/Redo · Quantization
+
+❌ MIDI · NWCTXT · MusicXML · 오선보 · SATB · Lead 추출 · 자동 편곡 · Demucs · IndexedDB · YouTube
+
+### 사용 순서
+
+1. 실제 음원 분석 후 Piano Roll을 엽니다. 자동 BPM이 추정 불가이면 왼쪽 BPM을 직접 입력합니다. 임의의 120 BPM으로 대체하지 않습니다.
+2. 박자표(4/4·3/4·6/8)와 **1마디 1박 위치**를 정합니다. 초 단위 입력, 원본 재생의 현재 위치, ±10/50ms 조정이 가능합니다. 6/8의 BPM 기준은 기본 점4분음표이며 4분음표로 바꿀 수 있습니다. 자동 BPM 분석 자체는 바꾸지 않습니다.
+3. 최소 단위(4·8·16·32분음표, 기본 16분)와 강도를 고르고 **Quantization 미리보기**를 누릅니다. 약하게는 시작/끝을 목표 grid까지 50% 이동, 표준은 100%, 강하게는 100% 정렬에 짧은 AI 음표의 삭제 후보 제안을 추가합니다. 어떤 강도도 음표를 자동 삭제하지 않습니다.
+4. 테두리 ghost와 통계·경고를 확인합니다. ghost 색은 시작 위치 이동량 <50ms / 50–100ms / ≥100ms입니다. 미리보기는 WorkingNotes와 history를 변경하지 않습니다. 취소하거나 BPM·박자표·BPM 기준·origin·단위·강도·WorkingNotes를 바꾸면 이전 미리보기는 무효화됩니다.
+5. **Quantization 적용**은 같은 ID의 WorkingNotes 시간을 일괄 교체하며 Undo 한 번으로 전부 복원합니다. Redo로 재적용합니다. AI 원본 `AnalysisResult.notes`는 그대로 유지합니다.
+6. Snap은 별도 설정이며 기본 OFF입니다. 1/4·1/8·1/16·1/32를 선택하면 이후 몸통 이동과 양쪽 Resize만 grid에 맞춥니다. Inspector는 정확한 초 단위 입력을 유지하고 기존 음표는 자동 변경하지 않습니다.
+
+### 음악 데이터와 수학
+
+- `PPQ=960`. 4분음표 기준 `quarterSeconds=60/BPM`, 6/8 점4분 기준 `quarterSeconds=(60/BPM)/1.5`. `tick=(seconds-origin)/quarterSeconds*960`, 역변환은 `seconds=origin+tick/960*quarterSeconds`입니다. 변환 자체는 실수를 보존하고 박자 정리 결과는 정수 tick입니다.
+- 박자표는 numerator/denominator로 해석합니다. 마디 길이는 `numerator*960*4/denominator`: 4/4=3840, 3/4=2880, 6/8=2880 tick. beat는 분모 음표 기준으로 1부터 셉니다(6/8은 6개의 8분박).
+- origin 이전 실제 음표는 음원 내의 양수 seconds와 음수 musical tick을 함께 유지합니다. floor 나눗셈으로 measure 0/-1을 표현하고 pickup 표시를 붙입니다. 근접한 음수가 0으로 스냅되어 pickup이 사라지는 경우도 보호합니다.
+- 시작과 끝을 각각 최근접 grid에 정렬하고 길이는 최소 한 grid입니다. 정확한 중간값은 0에서 먼 방향으로 정렬합니다. 음원 경계에서는 실제 재생 범위를 우선하여 tick/grid가 잘릴 수 있으며 경고합니다. 음원이 한 grid보다 짧아도 음표를 삭제하지 않습니다.
+- `QuantizedNote`는 ID·MIDI·원본 초·결과 초·startTick·durationTicks·measure·beat·tickInMeasure·pickup·origin·edited·movementMs를 갖습니다. `QuantizationResult`는 이 음표, 동일 ID의 적용용 NoteEvent[], segments, issues, stats를 함께 반환합니다.
+- 음가: 온음표3840, 2분1920, 4분960, 8분480, 16분240, 32분120, 점2분2880, 점4분1440, 점8분720 tick. 약한 정렬의 임의 길이는 custom으로 남깁니다. 복잡한 셋잇단음표·음가 분해는 구현하지 않습니다.
+- `splitNotesAcrossMeasures`는 마디선을 넘는 표기용 NoteSegment에 sourceNoteId와 tieFromPrevious/tieToNext를 생성합니다. 실제 WorkingNotes를 자르거나 바꾸지 않습니다. `findGaps`는 명시적인 단성 입력 전용이며 겹치는 다성 입력을 거부합니다. 전체 polyphonic collection에서 쉼표/성부를 자동 추정하지 않습니다.
+- 같은 시작의 화음을 병합하지 않습니다. 같은 음높이 겹침·짧은 음표·0 길이·경계·한 grid의 과도한 시작점·마디선 근접을 검토 대상으로 계산합니다. 정상 입력은 양수 길이를 강제하고 비정상 입력은 오류로 안내합니다. 전체 음표/변경/유지/평균·최대 시작 이동량/검토/짧은 음표/겹침 통계를 제공합니다.
+
+### 렌더링·성능·제한
+
+- 초 단위 기존 좌표 위에 현재 viewport의 마디/박/세분선을 표시합니다. grid mark는 최대 402개, ghost는 화면 안의 음표만, 표·경고 목록은 처음 30개만 DOM 렌더링합니다. 박자선 toggle은 음악 grid를 제어하며 기존 초 단위 배경과 눈금은 유지합니다. 공유 audio currentTime에서 마디/박 playhead 위치를 계산합니다.
+- 엔진은 main thread의 순수 함수입니다. 2,000/10,000개 단위 성능 검사와 2,000개 UI 미리보기 응답/DOM 검사를 제공합니다. 10,000개 **UI**나 장시간 최악 입력, 정확한 FPS/최대 RAM은 벤치마크하지 않았습니다.
+- 같은 박자표·BPM을 곡 전체에 적용합니다. 변박·변속·swing·triplet·rubato 추정, 자동 첫 박 찾기, Tap은 후속 기능입니다. Snap 경계/최소 길이 보호가 grid 정렬보다 우선할 수 있습니다.
+- 정리된 짧은 음표는 이동·pitch 수정에서 길이를 유지합니다. 자유 Resize/직접 길이 입력은 기존 최소 0.03초 정책이며 Snap Resize는 한 grid를 사용합니다.
+- 미리보기/적용 데이터는 앱 세션에만 존재합니다. 설정 변경이나 WorkingNotes 수정 후에는 미리보기를 다시 생성해야 합니다. 다음 exporter는 현재 유효한 WorkingNotes·effective BPM·박자표·origin 및 정리 결과를 입력받도록 연결할 수 있습니다.
+- 37개 단위 검사와 기존 21개 E2E + 실제 Basic Pitch→Quantization E2E를 실행합니다. 기존 AI 검출·MP3·CPU fallback·취소·stale result·tensor·BPM/Key 검사를 삭제하거나 mock으로 대체하지 않았습니다. 2,000개 **성능 fixture만** 합성 응답을 사용합니다. 모바일 390px에서 설정·preview·touch apply와 가로 overflow를 검사합니다.

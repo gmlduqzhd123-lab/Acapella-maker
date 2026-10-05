@@ -398,4 +398,34 @@ test("synthetic UI-only 2000-note performance fixture: virtualized DOM and selec
       setupAndRenderMs: Date.now() - began,
     }),
   );
+  await page.getByRole("button", { name: "BPM 수정", exact: true }).click();
+  await page.getByLabel("사용할 BPM", { exact: true }).fill("120");
+  await page.getByRole("button", { name: "BPM 적용", exact: true }).click();
+  const previewStart = Date.now();
+  await page
+    .getByRole("button", { name: "Quantization 미리보기", exact: true })
+    .click();
+  await expect(page.getByTestId("quant-result")).toContainText("총 음표 2000");
+  await expect(page.getByTestId("working-count")).toHaveText("2000");
+  const previewMs = Date.now() - previewStart;
+  expect(previewMs).toBeLessThan(3000);
+  const ghosts = await page.locator(".pr-ghost").count();
+  expect(ghosts).toBeGreaterThan(0);
+  expect(ghosts).toBeLessThan(2000);
+  const previewDom = await page.locator(".piano-roll *").count();
+  const previewVisible = await page.locator(".pr-note").count();
+  // Toolbar auto-scroll can reveal a different pitch/time viewport. Each real
+  // note has three children; each ghost has none. Grid/table overhead is bounded.
+  expect(previewVisible).toBeLessThan(2000);
+  expect(previewDom).toBeLessThan(previewVisible * 4 + ghosts + 600);
+  console.log(
+    JSON.stringify({
+      quantizationUiPerformance: true,
+      totalNotes: 2000,
+      previewMs,
+      ghostNotes: ghosts,
+      visibleNotes: previewVisible,
+      domNodes: previewDom,
+    }),
+  );
 });

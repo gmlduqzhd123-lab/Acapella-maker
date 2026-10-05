@@ -14,6 +14,7 @@ import { useNoteEditor } from "./editor/useNoteEditor";
 import { PianoRoll } from "./components/PianoRoll/PianoRoll";
 import { ConfirmDialog } from "./components/ConfirmDialog";
 import type { TransportState } from "./components/AudioPlayer";
+import { useRhythm } from "./quantization/useRhythm";
 import "./App.css";
 
 function App() {
@@ -35,6 +36,11 @@ function App() {
   const editor = useNoteEditor(
     analysis.result?.pitch ? analysis.result.notes : null,
     audio?.metadata.duration ?? 0,
+  );
+  const rhythm = useRhythm(
+    editor,
+    analysis.effective?.bpm ?? null,
+    audio?.objectUrl ?? "empty",
   );
   function seek(time: number) {
     if (player.current) {
@@ -132,7 +138,7 @@ function App() {
             </h1>
             <p>AI가 음악을 분석하고 아카펠라 악보 초안을 만들어드립니다.</p>
             <span className="stage-tag">
-              <span /> 네 번째 단계 · Piano Roll 편집
+              <span /> 다섯 번째 단계 · 음악 박자 정리
             </span>
           </div>
           <button
@@ -214,7 +220,7 @@ function App() {
                   악보 <small>준비 중</small>
                 </span>
               </div>
-              <span className="tiny-tag">STEP 04</span>
+              <span className="tiny-tag">STEP 05</span>
             </div>
             <div className={`editor-body ${audio ? "has-audio" : ""}`}>
               <AnalysisControls
@@ -286,6 +292,7 @@ function App() {
                       : "원본 음원 재생"}
                   </button>
                   <PianoRoll
+                    rhythm={rhythm}
                     editor={editor}
                     disabled={busy || analysis.busy}
                     currentTime={transport.currentTime}

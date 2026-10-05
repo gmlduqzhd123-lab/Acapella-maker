@@ -14,6 +14,13 @@ import { NoteInspector } from "./NoteInspector";
 import { PianoToolbar } from "./PianoToolbar";
 import { PianoNote } from "./PianoNote";
 import "./pianoRoll.css";
+import type { RhythmController } from "../../quantization/useRhythm";
+import { QuantizationPanel } from "./QuantizationPanel";
+import { BeatGrid } from "./BeatGrid";
+import { useBeatMarks } from "../../quantization/useBeatMarks";
+import { snapEditingNote } from "../../quantization/snapEdit";
+import { RESOLUTION_TICKS } from "../../quantization/grid";
+import { secondsPerQuarter } from "../../quantization/timeConversion";
 const KEYS = 64,
   HEADER = 32;
 interface Gesture {
@@ -31,12 +38,14 @@ export function PianoRoll({
   currentTime,
   playing,
   seek,
+  rhythm,
 }: {
   editor: NoteEditor;
   disabled: boolean;
   currentTime: number;
   playing: boolean;
   seek: (time: number) => void;
+  rhythm: RhythmController;
 }) {
   const viewport = useRef<HTMLDivElement>(null);
   const world = useRef<HTMLDivElement>(null);
@@ -171,6 +180,28 @@ export function PianoRoll({
     { length: Math.min(100, Math.ceil(view.width / zoom / step) + 3) },
     (_, i) => (first + i) * step,
   ).filter((time) => time <= editor.duration);
+  const beatMarks = useBeatMarks(
+    view.left,
+    view.width,
+    zoom,
+    editor.duration,
+    rhythm.settings,
+    rhythm.showGrid,
+  );
+  const ghosts = useMemo(
+    () =>
+      rhythm.preview?.notes.filter((note) => {
+        const y = (127 - note.midi) * rowHeight;
+        return (
+          y + rowHeight >= view.top - rowHeight &&
+          y <= view.top + view.height &&
+          KEYS + (note.startSeconds + note.durationSeconds) * zoom >=
+            view.left - 30 &&
+          KEYS + note.startSeconds * zoom <= view.left + view.width + 30
+        );
+      }) ?? [],
+    [rhythm.preview, rowHeight, view, zoom],
+  );
   function point(event: { clientX: number; clientY: number }) {
     const box = world.current!.getBoundingClientRect();
     return {
@@ -236,6 +267,16 @@ export function PianoRoll({
           midi: drag.note.midi - dy,
         },
         editor.duration,
+        Math.min(MIN_DURATION, drag.note.duration),
+      );
+    if (rhythm.snap !== "off" && rhythm.settings.bpm)
+      note = snapEditingNote(
+        note,
+        drag.note,
+        drag.edge,
+        rhythm.settings,
+        rhythm.snap,
+        editor.duration,
       );
     drag.preview = note;
     setPreview(note);
@@ -245,10 +286,25 @@ export function PianoRoll({
     gesture.current = null;
     setPreview(null);
     if (drag && drag.preview !== drag.note && !disabled)
-      editor.update(drag.note.id, {
-        start: drag.preview.start,
-        duration: drag.preview.duration,
-        midi: drag.preview.midi,
+      editor.dispatch({
+        type: "update",
+        id: drag.note.id,
+        patch: {
+          start: drag.preview.start,
+          duration: drag.preview.duration,
+          midi: drag.preview.midi,
+        },
+        duration: editor.duration,
+        minimumDuration:
+          rhythm.snap !== "off" && rhythm.settings.bpm
+            ? Math.min(
+                MIN_DURATION,
+                (RESOLUTION_TICKS[rhythm.snap] / 960) *
+                  secondsPerQuarter(rhythm.settings),
+              )
+            : drag.edge
+              ? MIN_DURATION
+              : Math.min(MIN_DURATION, drag.note.duration),
       });
   }
   return (
@@ -266,6 +322,12 @@ export function PianoRoll({
         follow={follow}
         setFollow={setFollow}
         reset={() => (editor.dirty ? setConfirm(true) : editor.reset())}
+      />
+      <QuantizationPanel
+        rhythm={rhythm}
+        currentTime={currentTime}
+        duration={editor.duration}
+        disabled={disabled}
       />
       <p className="pr-help">
         초 단위 자유 편집 · 음표를 드래그해 이동 · 양쪽 끝에서 길이 조절 ·{" "}
@@ -295,7 +357,7 @@ export function PianoRoll({
           }}
         >
           <div
-            className="pr-timeline"
+            className={`pr-timeline ${beatMarks.length ? "has-rhythm" : ""}`}
             style={{ height: HEADER }}
             onClick={(event) => {
               seek(point(event).start);
@@ -326,6 +388,20 @@ export function PianoRoll({
                   : `${Math.floor(time / 60)}:${String(Math.floor(time % 60)).padStart(2, "0")}`}
               </span>
             ))}
+            {beatMarks
+              .filter((mark) => mark.kind === "measure")
+              .map((mark) => (
+                <b
+                  className="pr-measure-label"
+                  data-measure={mark.measure}
+                  key={mark.tick}
+                  style={{ left: KEYS + mark.seconds * zoom }}
+                >
+                  {mark.pickup
+                    ? `Pickup ${mark.measure}`
+                    : `${mark.measure}마디`}
+                </b>
+              ))}
           </div>
           <div className="pr-keys" style={{ height: 128 * rowHeight }}>
             {rows.map((midi) => (
@@ -367,6 +443,25 @@ export function PianoRoll({
               }
             }}
           >
+            <BeatGrid marks={beatMarks} zoom={zoom} />
+            {ghosts.map((note) => (
+              <div
+                key={note.id}
+                className={`pr-ghost ${note.movementMs >= 100 ? "warning" : note.movementMs >= 50 ? "review" : ""}`}
+                data-source-id={note.id}
+                data-start-tick={note.startTick}
+                data-duration-ticks={note.durationTicks}
+                data-measure={note.measure}
+                data-beat={note.beat}
+                aria-label={`예정 음표 ${midiNoteName(note.midi)}, ${note.measure}마디 ${note.beat.toFixed(2)}박`}
+                style={{
+                  left: note.startSeconds * zoom,
+                  top: (127 - note.midi) * rowHeight + 1,
+                  width: Math.max(3, note.durationSeconds * zoom),
+                  height: rowHeight - 2,
+                }}
+              />
+            ))}
             {visible.map((original) => {
               const note = preview?.id === original.id ? preview : original;
               const metadata = editor.metadata[note.id];

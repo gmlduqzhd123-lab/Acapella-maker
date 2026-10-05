@@ -2,10 +2,14 @@ import type { NoteEvent } from "../music/types";
 export const MIN_DURATION = 0.03;
 export const clamp = (value: number, low: number, high: number) =>
   Math.max(low, Math.min(high, value));
-export function constrainNote(note: NoteEvent, duration: number): NoteEvent {
+export function constrainNote(
+  note: NoteEvent,
+  duration: number,
+  minimum = MIN_DURATION,
+): NoteEvent {
   const length = clamp(
     Number.isFinite(note.duration) ? note.duration : MIN_DURATION,
-    Math.min(MIN_DURATION, duration),
+    Math.min(minimum, duration),
     duration,
   );
   return {

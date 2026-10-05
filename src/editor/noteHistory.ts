@@ -17,11 +17,13 @@ export function initializeEditor(notes: NoteEvent[], counter = 0): EditorState {
 export type EditorAction =
   | { type: "initialize"; notes: NoteEvent[]; preserveCounter?: boolean }
   | { type: "select"; id: string | null }
+  | { type: "replaceNotes"; notes: NoteEvent[]; duration: number }
   | {
       type: "update";
       id: string;
       patch: Partial<Pick<NoteEvent, "midi" | "start" | "duration">>;
       duration: number;
+      minimumDuration?: number;
     }
   | { type: "add"; start: number; midi: number; duration: number }
   | { type: "delete"; id: string }
@@ -53,6 +55,45 @@ export function editorReducer(
       action.preserveCounter ? state.manualCounter : 0,
     );
   if (action.type === "select") return { ...state, selectedNoteId: action.id };
+  if (action.type === "replaceNotes") {
+    const current = new Map(state.notes.map((note) => [note.id, note]));
+    const ids = new Set(action.notes.map((note) => note.id));
+    if (
+      ids.size !== state.notes.length ||
+      action.notes.length !== state.notes.length ||
+      action.notes.some(
+        (note) =>
+          !current.has(note.id) ||
+          !Number.isFinite(note.start) ||
+          !Number.isFinite(note.duration) ||
+          note.start < 0 ||
+          note.duration <= 0 ||
+          note.start + note.duration > action.duration + 1e-8 ||
+          !Number.isInteger(note.midi) ||
+          note.midi < 0 ||
+          note.midi > 127,
+      )
+    )
+      return state;
+    const metadata = { ...state.metadata };
+    const notes = action.notes.map((note) => {
+      const before = current.get(note.id)!;
+      if (
+        before.start !== note.start ||
+        before.duration !== note.duration ||
+        before.midi !== note.midi
+      )
+        metadata[note.id] = { ...metadata[note.id], edited: true };
+      // Bulk rhythm edits cannot replace AI activation/velocity or origin.
+      return {
+        ...before,
+        start: note.start,
+        duration: note.duration,
+        midi: note.midi,
+      };
+    });
+    return commit(state, { notes: sortNotes(notes), metadata });
+  }
   if (action.type === "undo" || action.type === "redo") {
     const stack = action.type === "undo" ? state.past : state.future;
     const next = stack.at(-1);
@@ -115,7 +156,12 @@ export function editorReducer(
   const patch = { ...action.patch };
   if (patch.duration !== undefined)
     patch.duration = Math.min(patch.duration, action.duration - existing.start);
-  const note = constrainNote({ ...existing, ...patch }, action.duration);
+  const note = constrainNote(
+    { ...existing, ...patch },
+    action.duration,
+    action.minimumDuration ??
+      (patch.duration === undefined ? Math.min(0.03, existing.duration) : 0.03),
+  );
   const metadata = {
     ...state.metadata,
     [action.id]: { ...state.metadata[action.id], edited: true },
