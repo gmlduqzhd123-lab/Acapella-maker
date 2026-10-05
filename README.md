@@ -2,7 +2,7 @@
 
 듣던 음악을, 부를 수 있는 악보로.
 
-React · TypeScript · Vite 기반 GitHub Pages 전용 정적 웹앱입니다. 현재 릴리스는 **0.5.0: Piano Roll Quantization**입니다. AI가 초안을 만들고 사람이 음악을 완성합니다.
+React · TypeScript · Vite 기반 GitHub Pages 전용 정적 웹앱입니다. 현재 릴리스는 **0.6.0: MIDI / NWCTXT Export Beta**입니다. AI가 초안을 만들고 사람이 음악을 완성합니다.
 
 ## 실제 구현 상태
 
@@ -20,7 +20,11 @@ React · TypeScript · Vite 기반 GitHub Pages 전용 정적 웹앱입니다. �
 - 무음·단일음·근거 부족은 “추정 불가” 표시와 직접 입력 안내
 - 오류 복구·모바일 UI·GitHub Pages 하위 경로
 
-**아직 구현하지 않은 기능:** 악보 렌더링·MIDI·NWCTXT·MusicXML 내보내기, SATB 성부 분리·자동 편곡·Source Separation, IndexedDB, YouTube, M4A·OGG·MP4 지원. Basic Pitch는 SATB 분리기가 아니며 모든 감지 음표는 하나의 polyphonic note cloud입니다.
+✅ Audio · BPM / Key · Basic Pitch · Piano Roll · Quantization · MIDI Export · NWCTXT Export Beta
+
+❌ SATB 자동 성부 분리 · 실제 NWC Windows 자동 검증 · 오선보 렌더링 · MusicXML · 프로젝트 저장 · 일반곡 자동 아카펠라 편곡
+
+**아직 구현하지 않은 기능:** 위 항목과 Source Separation, IndexedDB, YouTube, M4A·OGG·MP4 지원. Basic Pitch는 SATB 분리기가 아니며 감지·편집 음표는 하나의 polyphonic note collection입니다. NWCTXT 자동 검증은 지원하는 구문과 음표 보존을 검사하며 실제 NWC 프로그램의 렌더링·재생을 검증한 것은 아닙니다.
 
 ## 로컬 실행과 검사
 
@@ -76,7 +80,7 @@ npm run test:e2e
 
 ## 외부 라이브러리와 라이선스
 
-FFT·템포·Chroma·Key 프로파일 매칭은 프로젝트 내부 구현입니다. Pitch에만 공식 Basic Pitch·TensorFlow.js를 추가했습니다. [공식 Basic Pitch](https://github.com/spotify/basic-pitch-ts)와 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)를 참고하세요.
+FFT·템포·Chroma·Key 프로파일 매칭은 프로젝트 내부 구현입니다. Pitch에는 공식 Basic Pitch·TensorFlow.js, MIDI에는 직접 의존성 @tonejs/midi를 사용합니다. [공식 Basic Pitch](https://github.com/spotify/basic-pitch-ts)와 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)를 참고하세요.
 
 | 라이브러리                 | 용도                               | 라이선스                    |
 | -------------------------- | ---------------------------------- | --------------------------- |
@@ -87,7 +91,7 @@ FFT·템포·Chroma·Key 프로파일 매칭은 프로젝트 내부 구현입니
 | lamejs                     | 테스트 PCM을 실제 MP3로 인코딩     | LGPL-3.0 (package metadata) |
 | @spotify/basic-pitch 1.0.1 | 공식 모델·다성 추론·공식 음표 변환 | Apache-2.0                  |
 | @tensorflow/tfjs 3.21.0    | WebGL·CPU 브라우저 추론            | Apache-2.0                  |
-| @tonejs/midi 2.0.28        | Basic Pitch의 전이 의존성          | MIT                         |
+| @tonejs/midi 2.0.28        | 실제 SMF MIDI 생성·재파싱          | MIT                         |
 
 lamejs와 테스트 신호는 앱 번들에 포함되지 않습니다. API Key·외부 분석 서비스·WebGPU가 필요하지 않습니다. 공식 모델 파일만 현재 사이트에서 GET으로 내려받습니다. GPU가 없으면 CPU Worker를 사용합니다.
 
@@ -173,7 +177,7 @@ tests/         실제 PCM·WAV·MP3 검사
 docs/          설계 기준·현재 구현 및 다음 단계
 ```
 
-다음 단계는 WorkingNotes와 유효한 박자 정리 결과를 입력으로 MIDI/NWCTXT를 구현하는 것입니다. 악보 렌더링·성부 분리·내보내기는 현재 구현하지 않습니다.
+6단계에서 WorkingNotes와 유효한 박자 정리 결과를 MIDI/NWCTXT에 연결했습니다. 다음 단계의 Voice Assignment도 이 편집본을 소비할 수 있으나 현재 Draft Voice는 겹침 방지용 notation lane이며 SATB 성부가 아닙니다.
 
 ## 4단계 Piano Roll Editor (0.4.0)
 
@@ -230,3 +234,45 @@ docs/          설계 기준·현재 구현 및 다음 단계
 - 정리된 짧은 음표는 이동·pitch 수정에서 길이를 유지합니다. 자유 Resize/직접 길이 입력은 기존 최소 0.03초 정책이며 Snap Resize는 한 grid를 사용합니다.
 - 미리보기/적용 데이터는 앱 세션에만 존재합니다. 설정 변경이나 WorkingNotes 수정 후에는 미리보기를 다시 생성해야 합니다. 다음 exporter는 현재 유효한 WorkingNotes·effective BPM·박자표·origin 및 정리 결과를 입력받도록 연결할 수 있습니다.
 - 37개 단위 검사와 기존 21개 E2E + 실제 Basic Pitch→Quantization E2E를 실행합니다. 기존 AI 검출·MP3·CPU fallback·취소·stale result·tensor·BPM/Key 검사를 삭제하거나 mock으로 대체하지 않았습니다. 2,000개 **성능 fixture만** 합성 응답을 사용합니다. 모바일 390px에서 설정·preview·touch apply와 가로 overflow를 검사합니다.
+
+## 6단계 MIDI / NWCTXT Export Beta (0.6.0)
+
+1. 실제 Pitch 분석을 완료하고 Piano Roll에서 음표를 확인·수정합니다.
+2. effective BPM, 박자표, BPM 기준, 1마디 1박 위치와 최소 단위를 선택합니다.
+3. Quantization 미리보기 → 적용을 완료합니다. 미리보기만으로는 내보낼 수 없습니다.
+4. `MIDI 다운로드` 또는 `NWC 악보 받기 · Beta`를 누릅니다. 원래 음원 이름에서 확장자를 바꾸고 Windows 금지 문자·예약 이름을 정리합니다.
+5. `.nwctxt`를 NoteWorthy Composer에서 열어 확인하고 필요하면 `.nwc`로 저장하세요. NWC에서도 MIDI를 가져올 수 있지만 못갖춘마디·악보 표기는 다시 정리가 필요할 수 있습니다.
+
+### 데이터와 내보내기
+
+- `src/export/snapshot.ts`: WorkingNotes, effective BPM/Key, 박자표/BPM 단위/origin/resolution/strength, PPQ960, 적용 결과와 음원 길이를 깊이 복제합니다. AI 원본 `AnalysisResult.notes`는 소비하거나 수정하지 않습니다. QuantizationResult에 설정 provenance를 추가하여 음표뿐 아니라 모든 박자 설정의 일치를 검사합니다.
+- WorkingNotes/설정 변경 후에는 양쪽 버튼이 잠깁니다. `현재 편집 내용에 맞게 박자 정리를 다시 적용해 주세요.`를 표시합니다. 저장 중에는 캡처한 snapshot을 사용하므로 후속 편집이 해당 파일에 섞이지 않습니다.
+- `src/export/midiExporter.ts`: @tonejs/midi **2.0.28 직접 의존성**, 지연 로딩, SMF MThd, PPQ960, tempo 및 time signature. 음원 0초가 MIDI 0초이며 pickup musical tick을 음수 MIDI tick으로 쓰지 않습니다. 6/8 점4분 BPM은 quarter BPM ×1.5로 변환합니다. 정수 microseconds tempo 인코딩을 고려하여 긴 파일의 timing drift를 줄입니다.
+- MIDI는 현재 NoteEvent의 pitch/start/duration/velocity를 보존합니다. 같은 pitch의 교차 겹침은 별도 track/channel로 분리하여 note-off 매칭에 따른 길이 손실을 방지합니다. 다른 pitch는 같은 track에 둘 수 있습니다. GM percussion channel을 제외한 최대 15개 채널입니다. 이는 성부 추정이 아닙니다.
+- MIDI velocity는 정수 0–127 범위를 검사합니다. **0은 MIDI note-off 의미**이므로 실제 note-on으로 보존할 수 없으며 조용히 음표를 버리는 대신 오류로 차단합니다. 양수 1–127은 재파싱 검사합니다. 최대 tempo tick 오차는 PPQ 양자화의 약 반 tick입니다.
+- `src/export/nwctxt/`: 2.75 전체 파일, UTF-8, SongInfo, AddStaff, StaffProperties, Treble/Bass, Key, TimeSig, 첫 staff의 Tempo, Note/Rest/Chord/Bar를 직렬화합니다. 24개 조성을 명시적으로 매핑하며 tonic에 맞는 enharmonic 표기와 octave별 임시표 상태를 관리하고 마디에서 초기화합니다.
+- Treble Pos0=B4, Bass Pos0=D3의 diatonic 기준을 분리했습니다. 알려진 C4/E4/G4 chord Pos=-6,-4,-2 fixture 및 24조성×128 MIDI 역변환을 검사합니다. 임시표는 `#`, `b`, `n`이며 quote/backslash/pipe를 포함한 UTF-8 제목을 구문 주입 없이 처리합니다.
+- 같은 startTick/durationTicks는 chord 후보입니다. 같은 diatonic 위치의 unison/반음은 NWC 중복 Pos 손실을 막기 위해 다른 lane에 둡니다. 이외 겹침은 정렬된 interval partition으로 `Draft Voice 1..8`에 배치합니다. ninth concurrent lane은 안내 후 차단합니다. SATB/Lead 추정은 없습니다.
+- 각 lane만 단성으로 보고 `findGaps`로 rest를 생성합니다. 전체 polyphonic collection을 한 줄로 간주하지 않습니다. 모든 원본 ID와 MIDI/start/end를 validator에서 재구성하여 손실·중복을 검사합니다.
+- Duration은 Whole/Half/4th/8th/16th/32nd/64th 및 dotted 조합의 정확한 tick 합으로 분해합니다. 241 tick처럼 정확히 표현 불가능하면 NWC 다운로드를 잠그고 Standard/Strong 재적용을 안내합니다. MIDI는 유효한 적용 결과가 있으면 사용 가능합니다. 임의 rounding은 없습니다.
+- 마디선과 음가 분해에서 note/chord 구성음별 `^` tie를 연결합니다. rest에는 tie를 쓰지 않습니다. pickup은 실제 가장 이른 음표부터 0까지의 불완전 마디를 보존하며 시작을 온마디 rest로 채우지 않습니다. 마지막 정규 마디에는 lane별 rest를 채웁니다.
+- `validator.ts`는 snapshot provenance, header/footer, staff 수, clef/key/meter/tempo, duration token, Pos/accidental 역변환, lane overlap, 마디 tick 합, tie chain 및 ID별 원음표 보존을 검사합니다. 자체 지원 구문 validator이며 NWC 공식 파서/실행기 검증을 대체하지 않습니다. UI에 Staff/Notes/Measures/Chords/Ties/Warnings를 표시합니다.
+- 파일은 브라우저 Blob/ObjectURL로만 생성하고 download 후 URL을 회수합니다. export API key·서버·외부 HTTP 요청은 없습니다. 지연 로딩된 MIDI 번들만 같은 Pages origin에서 GET합니다.
+
+### 수동 NWC acceptance
+
+`public/examples/acascore-nwc-test-4-4.nwctxt`, `-3-4.nwctxt`, `-6-8.nwctxt`를 앱에서 다운로드할 수 있습니다. 각각 19개 합성 음표, 2개 staff에 C Major 음계·반음/임시표·동시 화음·쉼표·점음표·분해/마디선 tie·Treble/Bass·pickup을 포함합니다. `node --experimental-strip-types scripts/generate-nwc-samples.mts`로 재생성합니다. 이 예제는 실제 분석 결과를 대신하지 않습니다.
+
+**남은 수동 확인:** Windows NWC 2.75에서 실제로 열기, 한글/인용 제목, 각 clef/조성/임시표의 소리와 위치, chord/tie 및 rest 길이, 3개 박자표, 6/8 점4분 tempo, 소수 BPM, pickup 첫마디, `.nwc` 재저장. 이 프로젝트에서 NWC 프로그램을 실행해 확인하지 않았습니다. 따라서 NWCTXT는 Beta이며 NWC에서 검증 완료라고 표시하지 않습니다.
+
+형식 근거: [공식 전체 파일 예제](https://forum.noteworthycomposer.com/?topic=6094.0), [공식 object/duration/tempo 열거형](https://lua.noteworthycomposer.com/plugin/nwc.md), [공식 NWC text/MIDI import 안내](https://noteworthycomposer.com/faq/32.md).
+
+### 검증과 제한
+
+48개 단위 검사: 기존 37개 유지 + snapshot/stale, MIDI PPQ/tempo/meter/velocity/교차 overlap/긴 timing, UTF-8 제목/파일명, 24조성/Pos/임시표, exact duration, chord/lane/pickup/tie/validator 오류 11개 검사.
+
+23개 E2E: 기존 22개 그대로 유지 + **실제 Basic Pitch WAV → MIDI/NWCTXT 다운로드**. Playwright download event에서 실제 bytes/text를 읽고 MIDI를 @tonejs/midi로 재파싱하며 NWC를 별도 expected document와 비교합니다. 원본 C4/E4/G4/C5 감지, 첫 C4→D4 사용자 수정, preview-only 잠금, 적용, 모든 설정 stale, weak/custom NWC 차단/복구, 390px touch 다운로드/overflow, 외부 요청 부재를 확인합니다. 기존 실제 MP3·CPU fallback·모델 재사용/tensor 안정·취소/stale·BPM/Key 회귀를 유지합니다.
+
+표기 export는 현재 main thread의 순수 함수입니다. 악보 길이·겹침 정도에 따라 직렬화 객체가 증가합니다. notation lane 최대8, MIDI 동일 pitch 겹침 최대15 채널이며 대용량 export FPS/RAM 한계는 별도로 벤치마크하지 않았습니다. 기존 2,000 UI/10,000 순수 quantization 검사는 유지합니다. 변박·변속·swing·triplet·실제 악기 음색·SATB·오선보·MusicXML·저장은 미구현입니다.
+
+다음 Voice Assignment 단계에는 immutable WorkingNotes snapshot과 musical ticks, lane별 source ID, report/validation 결과를 입력으로 사용할 수 있습니다. 현재 Draft Voice 번호를 Soprano/Alto/Tenor/Bass라고 해석하면 안 됩니다.

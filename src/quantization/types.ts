@@ -51,6 +51,8 @@ export interface QuantizationIssue {
   deletionCandidate?: boolean;
 }
 export interface QuantizationResult {
+  /** Settings provenance prevents exporting ticks under a different meter/grid. */
+  settings: RhythmSettings;
   notes: QuantizedNote[];
   workingNotes: NoteEvent[];
   segments: NoteSegment[];

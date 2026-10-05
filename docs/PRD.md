@@ -151,3 +151,14 @@ AnalysisResult는 nullable bpm/key, bpmConfidence, 실제 notes, tempoCandidates
 - 경계/짧은 음표/겹침/혼잡/마디선 경고 및 통계. 삭제·병합을 자동 수행하지 않음
 - 2,000/10,000 pure 함수 검사, 2,000 UI preview 검사, 실제 Basic Pitch→Quantization 및 모바일 E2E 추가
 - 다음 MIDI/NWCTXT 입력을 준비하되 이번 단계에는 exporter·오선보·SATB·storage·backend를 구현하지 않음
+
+## 6단계 완료 기준 / 0.6.0
+
+- WorkingNotes/effective BPM·Key/settings/적용 결과를 깊이 복제한 ExportSnapshot, 설정 provenance 및 stale 잠금
+- @tonejs/midi 2.0.28 직접 의존성; PPQ960·tempo·meter·양수 velocity·실제 timing 유지, 음원0초=SMF0
+- UTF-8 NWCTXT2.75 Beta; 24조성, Treble/Bass Pos, 임시표, chord·rest·bar·점음가·정확한 duration 분해
+- Draft Voice notation lane 최대8, source ID 손실 없이 deterministic partition; SATB/Lead 분리 없음
+- pickup 불완전 마디·음표별 tie 보존, per-lane findGaps, unsupported duration 차단 및 재적용 안내
+- 자체 validator/통계, Blob 다운로드, Windows 수동 acceptance 예제3개. 실제 NWC 실행/Windows 자동검증 미완료
+- 기존37단위/22E2E 유지 +11단위/1실제 Basic Pitch→다운로드 E2E
+- NativeNWC·오선보·SATB·SourceSeparation·MusicXML·PDF·IndexedDB·backend는 구현하지 않음

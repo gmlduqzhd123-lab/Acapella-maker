@@ -4,4 +4,4 @@ export interface ExportedFile {
   blob: Blob;
 }
 export type ScoreExporter = (score: ScoreData) => ExportedFile;
-// MIDI and NWCTXT exporters belong to later MVP stages. No placeholder files are emitted.
+// Future score-renderer contract. Phase6 MIDI/NWCTXT consume ExportSnapshot directly.

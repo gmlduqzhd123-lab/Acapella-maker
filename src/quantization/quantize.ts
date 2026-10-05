@@ -107,6 +107,7 @@ export function quantize(
       Math.abs(note.duration - notes[index].duration) > 1e-9,
   ).length;
   return {
+    settings: { ...settings },
     notes: musical,
     workingNotes,
     issues,

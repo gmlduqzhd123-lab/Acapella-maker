@@ -7,7 +7,7 @@
 - License: Apache-2.0. Full license text is distributed in `public/licenses/Apache-2.0.txt`.
 - The official model.json and group1-shard1of1.bin are copied unchanged from this package by scripts/sync-basic-pitch-model.mjs, and served from the application's origin. No fork or CDN model is used.
 - The model and inference implementation are unmodified. The app wraps the public APIs with a Worker platform adapter, bounded evaluation scopes and NoteEvent mapping.
-- Package-transitive `@tonejs/midi@2.0.28` is MIT. The application does not expose MIDI export in this phase.
+- `@tonejs/midi@2.0.28` is MIT and is a direct application dependency for browser SMF MIDI generation and development round-trip validation. Source: https://github.com/Tonejs/Midi. It is loaded from the same static application origin, with no external service.
 
 ## TensorFlow.js
 

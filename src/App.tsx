@@ -15,6 +15,7 @@ import { PianoRoll } from "./components/PianoRoll/PianoRoll";
 import { ConfirmDialog } from "./components/ConfirmDialog";
 import type { TransportState } from "./components/AudioPlayer";
 import { useRhythm } from "./quantization/useRhythm";
+import { ExportPanel } from "./components/ExportPanel";
 import "./App.css";
 
 function App() {
@@ -220,7 +221,7 @@ function App() {
                   악보 <small>준비 중</small>
                 </span>
               </div>
-              <span className="tiny-tag">STEP 05</span>
+              <span className="tiny-tag">STEP 06</span>
             </div>
             <div className={`editor-body ${audio ? "has-audio" : ""}`}>
               <AnalysisControls
@@ -299,6 +300,14 @@ function App() {
                     playing={transport.playing}
                     seek={seek}
                   />
+                  <ExportPanel
+                    filename={audio.metadata.name}
+                    notes={editor.notes}
+                    rhythm={rhythm}
+                    musicalKey={analysis.effective?.key ?? null}
+                    duration={audio.metadata.duration}
+                    disabled={busy || analysis.busy}
+                  />
                 </>
               )}
               <PitchSummary result={analysis.result} />
@@ -357,11 +366,12 @@ function App() {
                   <em>지금 사용 가능</em>
                 </div>
               </li>
-              <li>
+              <li className="current">
                 <span>04</span>
                 <div>
                   <strong>악보 내보내기</strong>
                   <p>MIDI · NWCTXT</p>
+                  <em>지금 사용 가능 · Beta</em>
                 </div>
               </li>
             </ol>

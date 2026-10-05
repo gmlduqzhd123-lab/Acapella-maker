@@ -1,0 +1,62 @@
+!NoteWorthyComposer(2.75)
+|SongInfo|Title:"AcaScore NWC 6/8 검증 \"음계\""
+|AddStaff|Name:"Draft Voice 1"|Label:"Draft Voice 1"
+|StaffProperties|EndingBar:Section Close|Visible:Y|Lines:5
+|StaffProperties|Muted:N|Volume:100|StereoPan:64|Device:0|Channel:1
+|Clef|Type:Treble
+|Key|Signature:C|Tonic:C
+|TimeSig|Signature:6/8
+|Tempo|Base:Quarter Dotted|Tempo:120|Pos:8
+|Note|Dur:8th|Pos:-13
+|Bar
+|Note|Dur:Half,Dotted|Pos:-13^
+|Bar
+|Note|Dur:Half,Dotted|Pos:-13^
+|Bar
+|Note|Dur:Half|Pos:-13
+|Rest|Dur:8th
+|Note|Dur:16th|Pos:#-6
+|Note|Dur:16th|Pos:-6
+|Bar
+|Note|Dur:16th|Pos:-6
+|Rest|Dur:16th
+|Note|Dur:8th,Dotted|Pos:#-5
+|Rest|Dur:16th
+|Note|Dur:16th,Dotted|Pos:-4
+|Rest|Dur:8th
+|Rest|Dur:32nd
+|Chord|Dur:8th|Pos:-2^,1^
+|Bar
+|Chord|Dur:Half,Dotted|Pos:-2^,1^
+|Bar
+|Chord|Dur:Half|Pos:-2^,1^
+|Chord|Dur:8th|Pos:-2,1
+|Rest|Dur:8th
+|Bar
+|AddStaff|Name:"Draft Voice 2"|Label:"Draft Voice 2"
+|StaffProperties|EndingBar:Section Close|Visible:Y|Lines:5
+|StaffProperties|Muted:N|Volume:100|StereoPan:64|Device:0|Channel:2
+|Clef|Type:Treble
+|Key|Signature:C|Tonic:C
+|TimeSig|Signature:6/8
+|Rest|Dur:8th
+|Bar
+|Chord|Dur:4th|Pos:-6,-4,-2
+|Note|Dur:4th|Pos:-5
+|Note|Dur:4th|Pos:-4
+|Bar
+|Note|Dur:4th|Pos:-3
+|Note|Dur:4th|Pos:-2
+|Note|Dur:4th|Pos:-1
+|Bar
+|Note|Dur:4th|Pos:0
+|Note|Dur:4th|Pos:1
+|Rest|Dur:4th
+|Bar
+|Rest|Dur:Half,Dotted
+|Bar
+|Rest|Dur:Half,Dotted
+|Bar
+|Rest|Dur:Half,Dotted
+|Bar
+!NoteWorthyComposer-End
