@@ -22,6 +22,7 @@ export interface NwcPitch {
   accidental: string;
 }
 export interface NwcItem {
+  label?: string;
   kind: "Note" | "Chord" | "Rest";
   startTick: number;
   durationTicks: number;
@@ -37,6 +38,9 @@ export interface NwcMeasure {
   items: NwcItem[];
 }
 export interface NwcStaff {
+  displayClef?: "Percussion";
+  midiChannel?: number;
+  instrumentPatch?: number;
   name: string;
   clef: NwcClef;
   key: KeyDefinition;

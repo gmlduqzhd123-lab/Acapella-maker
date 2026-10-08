@@ -9,6 +9,7 @@ import type { TransportState } from "../AudioPlayer";
 import { UploadZone } from "../UploadZone";
 import { formatTime } from "../../audio/format";
 import { TeamSetup } from "./TeamSetup";
+import { TeamTemplateDownload } from "./TeamTemplateDownload";
 import { QuickExport } from "./QuickExport";
 import "./creation.css";
 export function QuickWorkspace({
@@ -99,6 +100,7 @@ export function QuickWorkspace({
       </section>
       <section className="panel quick-main">
         <TeamSetup team={team} onChange={setTeam} disabled={busy} />
+        <TeamTemplateDownload team={team} disabled={busy} />
         <div className="quick-generate">
           <button
             className="button primary"

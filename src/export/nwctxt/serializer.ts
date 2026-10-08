@@ -63,8 +63,9 @@ export function serializeNwc(document: NwcDocument) {
     lines.push(
       `|AddStaff|Name:${quoteNwcText(staff.name)}|Label:${quoteNwcText(staff.name)}`,
       "|StaffProperties|EndingBar:Section Close|Visible:Y|Lines:5",
-      `|StaffProperties|Muted:N|Volume:100|StereoPan:64|Device:0|Channel:${index + 1}`,
-      `|Clef|Type:${staff.clef}`,
+      `|StaffProperties|Muted:N|Volume:100|StereoPan:64|Device:0|Channel:${staff.midiChannel ?? index + 1}`,
+      ...(staff.instrumentPatch === undefined ? [] : [`|StaffInstrument|Patch:${staff.instrumentPatch}|Trans:0`]),
+      `|Clef|Type:${staff.displayClef ?? staff.clef}`,
       `|Key|Signature:${staff.key.signature}|Tonic:${staff.key.tonic}`,
       `|TimeSig|Signature:${document.timeSignature}`,
     );
@@ -74,6 +75,7 @@ export function serializeNwc(document: NwcDocument) {
       );
     for (const measure of staff.measures) {
       for (const item of measure.items) {
+        if (item.label) lines.push(`|Text|Text:${quoteNwcText(item.label)}|Pos:6`);
         const position =
           item.kind === "Rest"
             ? ""
