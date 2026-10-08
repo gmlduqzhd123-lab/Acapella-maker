@@ -5,6 +5,7 @@ import { makeMp3 } from "./fixtures";
 test.use({ actionTimeout: 15_000, hasTouch: true });
 async function analyze(page: Page, format: "wav" | "mp3" = "wav", fit = true) {
   await page.goto("./");
+  await page.getByRole("button", { name: "고급 편집", exact: true }).click();
   await expect(
     page.getByRole("tab", { name: "Piano Roll", exact: true }),
   ).toBeDisabled();

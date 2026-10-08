@@ -1,0 +1,128 @@
+[hidden] {
+  display: none !important;
+}
+.mode-switch {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.quick-workspace {
+  max-width: 1100px;
+  margin: auto;
+  min-width: 0;
+}
+.quick-steps {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 18px;
+  color: #537549;
+  font-weight: 650;
+  font-size: 14px;
+  flex-wrap: wrap;
+}
+.quick-input,
+.quick-main {
+  padding: 24px;
+  margin-bottom: 20px;
+  min-width: 0;
+}
+.quick-file,
+.team-fields {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.quick-file {
+  margin-top: 16px;
+  overflow-wrap: anywhere;
+}
+.quick-file input {
+  width: 100%;
+}
+.team-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  flex: 1;
+  min-width: 150px;
+}
+.team-fields select,
+.quick-main input {
+  padding: 10px;
+  border: 1px solid #cbd5c9;
+  border-radius: 8px;
+  min-width: 0;
+  background: white;
+  max-width: 100%;
+}
+.team-parts {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  gap: 10px;
+  margin: 20px 0;
+  padding: 0;
+}
+.team-parts li {
+  padding: 14px;
+  background: #f2f6ed;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+}
+.team-parts li span {
+  color: #57734e;
+  font-weight: 700;
+}
+.team-parts small {
+  font-size: 11px;
+  line-height: 1.6;
+  color: #65725f;
+}
+.creation-note {
+  font-size: 12px;
+  line-height: 1.8;
+  color: #687568;
+  overflow-wrap: anywhere;
+}
+.creation-error {
+  color: #98401e;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.quick-generate,
+.quick-result {
+  border-top: 1px solid #e0e4dd;
+  margin-top: 22px;
+  padding-top: 22px;
+}
+.quick-main h2 {
+  font-size: 20px;
+}
+.quick-generate progress {
+  width: 100%;
+  accent-color: #264c40;
+}
+@media (max-width: 640px) {
+  .quick-input,
+  .quick-main {
+    padding: 16px;
+  }
+  .quick-steps {
+    font-size: 12px;
+    gap: 8px;
+  }
+  .team-fields label {
+    min-width: calc(50% - 12px);
+  }
+  .quick-result .button {
+    margin-bottom: 10px;
+  }
+}

@@ -60,6 +60,29 @@ export function useRhythm(
     setSnap,
     showGrid,
     setShowGrid,
+    applyCurrent: () => {
+      const result = quantize(
+        editor.notes,
+        editor.metadata,
+        settings,
+        editor.duration,
+      );
+      editor.dispatch({
+        type: "replaceNotes",
+        notes: result.workingNotes,
+        duration: editor.duration,
+      });
+      setLastApplied({
+        result,
+        settings,
+        source: sortNotes(result.workingNotes),
+        original: editor.original,
+        session,
+      });
+      setPreview(null);
+      setError("");
+      return result;
+    },
     preview: visiblePreview,
     applied,
     error,

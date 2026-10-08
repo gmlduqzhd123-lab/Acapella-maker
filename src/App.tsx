@@ -17,6 +17,10 @@ import type { TransportState } from "./components/AudioPlayer";
 import { useRhythm } from "./quantization/useRhythm";
 import { ExportPanel } from "./components/ExportPanel";
 import { useVoices } from "./voices/useVoices";
+import { useQuickDraft } from "./creation/useQuickDraft";
+import { DEFAULT_TEAM } from "./creation/team";
+import type { TeamSettings } from "./creation/team";
+import { QuickWorkspace } from "./components/creation/QuickWorkspace";
 import "./App.css";
 
 function App() {
@@ -26,6 +30,9 @@ function App() {
   const [error, setError] = useState("");
   const [tab, setTab] = useState<"audio" | "piano">("audio");
   const [reanalyze, setReanalyze] = useState(false);
+  const [advanced, setAdvanced] = useState(false);
+  const [team, setTeam] = useState<TeamSettings>(DEFAULT_TEAM);
+  const [quickConfirm, setQuickConfirm] = useState(false);
   const [transport, setTransport] = useState<TransportState>({
     currentTime: 0,
     duration: 0,
@@ -45,6 +52,16 @@ function App() {
     audio?.objectUrl ?? "empty",
   );
   const voices = useVoices(editor, rhythm);
+  const quick = useQuickDraft(audio, analysis, editor, rhythm);
+  function togglePlayback() {
+    if (player.current?.paused)
+      void player.current
+        .play()
+        .catch(() =>
+          setError("원본을 재생하지 못했습니다. 다시 시도해 주세요."),
+        );
+    else player.current?.pause();
+  }
   function seek(time: number) {
     if (player.current) {
       player.current.currentTime = time;
@@ -68,6 +85,8 @@ function App() {
   );
   async function importFiles(files: File[]) {
     if (busyRef.current) return;
+    quick.reset();
+    setQuickConfirm(false);
     analysis.cancel();
     if (files.length !== 1) {
       setError("한 번에 하나의 음악 파일을 선택해 주세요.");
@@ -107,6 +126,8 @@ function App() {
   }
   function removeAudio() {
     if (busyRef.current) return;
+    quick.reset();
+    setQuickConfirm(false);
     analysis.reset();
     setTab("audio");
     setReanalyze(false);
@@ -141,7 +162,7 @@ function App() {
             </h1>
             <p>AI가 음악을 분석하고 아카펠라 악보 초안을 만들어드립니다.</p>
             <span className="stage-tag">
-              <span /> 다섯 번째 단계 · 음악 박자 정리
+              <span /> 간편 음표 초안 · 5명 / 6명 팀 설정
             </span>
           </div>
           <button
@@ -154,7 +175,52 @@ function App() {
             <Icon name="plus" size={18} /> 새 악보 만들기
           </button>
         </section>
-        <div className="workspace">
+        <div className="mode-switch">
+          <button
+            className="button"
+            disabled={quick.busy || analysis.busy || busy}
+            onClick={() => {
+              setAdvanced((value) => !value);
+              setTab("audio");
+            }}
+          >
+            {advanced ? "간편 화면" : "고급 편집"}
+          </button>
+          <span className="creation-note">
+            {advanced
+              ? "기존 분석·Piano Roll·SATB 편집 기능"
+              : "파일을 넣고 한 번에 음표 초안을 만드세요."}
+          </span>
+        </div>
+        {!advanced && (
+          <QuickWorkspace
+            audio={audio}
+            analysis={analysis}
+            editor={editor}
+            rhythm={rhythm}
+            quick={quick}
+            team={team}
+            setTeam={setTeam}
+            importing={busy}
+            onFiles={(files) => {
+              void importFiles(files);
+            }}
+            onRemove={removeAudio}
+            onStart={() => {
+              if (editor.dirty) setQuickConfirm(true);
+              else void quick.run(team);
+            }}
+            onAdvanced={() => {
+              setAdvanced(true);
+              setTab("piano");
+            }}
+            onPlay={togglePlayback}
+            transport={transport}
+            seek={seek}
+            error={error}
+          />
+        )}
+        <div className="workspace" hidden={!advanced}>
           <aside className="project-panel panel">
             <div className="panel-heading">
               <Icon name="file" />
@@ -223,7 +289,7 @@ function App() {
                   악보 <small>준비 중</small>
                 </span>
               </div>
-              <span className="tiny-tag">STEP 07</span>
+              <span className="tiny-tag">ADVANCED</span>
             </div>
             <div className={`editor-body ${audio ? "has-audio" : ""}`}>
               <AnalysisControls
@@ -251,12 +317,14 @@ function App() {
                 </div>
               )}
               <div hidden={tab !== "audio"}>
-                <UploadZone
-                  onFiles={(files) => {
-                    void importFiles(files);
-                  }}
-                  busy={busy}
-                />
+                {advanced && (
+                  <UploadZone
+                    onFiles={(files) => {
+                      void importFiles(files);
+                    }}
+                    busy={busy}
+                  />
+                )}
                 {audio ? (
                   <AudioPlayer
                     key={audio.objectUrl}
@@ -403,6 +471,17 @@ function App() {
           onConfirm={() => {
             setReanalyze(false);
             startAnalysis();
+          }}
+        />
+      )}
+      {quickConfirm && (
+        <ConfirmDialog
+          message="현재 수정한 음표가 있습니다. 초안을 다시 만들면 편집 내용이 초기화됩니다."
+          action="초안 다시 만들기"
+          onCancel={() => setQuickConfirm(false)}
+          onConfirm={() => {
+            setQuickConfirm(false);
+            void quick.run(team);
           }}
         />
       )}

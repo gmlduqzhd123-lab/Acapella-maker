@@ -62,6 +62,7 @@ for (const file of [musicWav, musicMp3]) {
     page.on("pageerror", (error) => errors.push(error.message));
     page.on("worker", (worker) => workers.push(worker.url()));
     await page.goto("./");
+    await page.getByRole("button", { name: "고급 편집", exact: true }).click();
     await expect(
       page.getByRole("button", { name: "음악 분석 시작", exact: true }),
     ).toBeDisabled();
@@ -173,6 +174,7 @@ test("ten-minute real PCM: responsive UI, measured progress, cancel Worker, repl
   page,
 }) => {
   await page.goto("./");
+  await page.getByRole("button", { name: "고급 편집", exact: true }).click();
   await page
     .getByLabel("음악 파일 선택", { exact: true })
     .setInputFiles(longMusic);
@@ -335,6 +337,7 @@ test("silent audio has no invented values, supports manual values, and next impo
   page,
 }) => {
   await page.goto("./");
+  await page.getByRole("button", { name: "고급 편집", exact: true }).click();
   await page.getByLabel("음악 파일 선택", { exact: true }).setInputFiles({
     name: "silence.wav",
     mimeType: "audio/wav",
@@ -387,6 +390,7 @@ test("analysis-only Worker startup failure is recoverable and leaves playback wo
     };
   });
   await page.goto("./");
+  await page.getByRole("button", { name: "고급 편집", exact: true }).click();
   await page
     .getByLabel("음악 파일 선택", { exact: true })
     .setInputFiles(musicWav);

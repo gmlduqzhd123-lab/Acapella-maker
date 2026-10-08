@@ -8,6 +8,7 @@ import { VOICES, VOICE_NAMES } from "../src/voices/types";
 test.use({ hasTouch: true });
 async function analyze(page: Page, buffer: Buffer, name: string) {
   await page.goto("./");
+  await page.getByRole("button", { name: "고급 편집", exact: true }).click();
   await page
     .getByLabel("음악 파일 선택", { exact: true })
     .setInputFiles({ name, mimeType: "audio/wav", buffer });

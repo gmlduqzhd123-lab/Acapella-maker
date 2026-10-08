@@ -30,6 +30,7 @@ test("actual Basic Pitch WAV → edited WorkingNotes → applied quantization �
   });
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("./");
+  await page.getByRole("button", { name: "고급 편집", exact: true }).click();
   await page.getByLabel("음악 파일 선택", { exact: true }).setInputFiles({
     name: "export-real.wav",
     mimeType: "audio/wav",

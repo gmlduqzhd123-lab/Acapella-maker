@@ -97,13 +97,15 @@ export function useMusicAnalysis() {
         },
       );
       if (version !== generation.current) return;
-      setResult({
+      const completed = {
         ...next.result,
         notes: detected.notes,
         pitch: detected.metadata,
-      });
+      };
+      setResult(completed);
       setStatus("complete");
       setProgress({ phase: "complete", fraction: 1 });
+      return completed;
     } catch (reason) {
       if (controller.signal.aborted || version !== generation.current) return;
       setStatus("error");

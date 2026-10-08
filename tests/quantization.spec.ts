@@ -53,6 +53,7 @@ test("actual Basic Pitch WAV → quantization preview/cancel/stale protection/ap
       external.push(request.url());
   });
   await page.goto("./");
+  await page.getByRole("button", { name: "고급 편집", exact: true }).click();
   await page.getByLabel("음악 파일 선택", { exact: true }).setInputFiles({
     name: "quantization-real.wav",
     mimeType: "audio/wav",

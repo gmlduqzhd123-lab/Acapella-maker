@@ -28,6 +28,7 @@ test("home, file chooser, actual WAV decode, worker waveform, playback, seek, no
       network.push(request.method() + " " + request.url());
   });
   await page.goto("./");
+  await page.getByRole("button", { name: "고급 편집", exact: true }).click();
   await expect(page).toHaveTitle(/AcaScore AI/);
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
     "부를 수 있는 악보로.",
@@ -78,6 +79,7 @@ test("real MP3 decoding and replacing with the same file repeatedly", async ({
   page,
 }) => {
   await page.goto("./");
+  await page.getByRole("button", { name: "고급 편집", exact: true }).click();
   await page.getByLabel("음악 파일 선택", { exact: true }).setInputFiles(mp3);
   await expect(page.locator(".filename")).toHaveText(mp3.name);
   await expect(page.locator("dd").nth(2)).toHaveText("MP3");
@@ -103,6 +105,7 @@ test("actual drag and drop, uppercase extensions, and right-channel waveform", a
   page,
 }) => {
   await page.goto("./");
+  await page.getByRole("button", { name: "고급 편집", exact: true }).click();
   const bytes = Array.from(makeWav(2, 22050, 2));
   const data = await page.evaluateHandle((bytes) => {
     const transfer = new DataTransfer();
@@ -129,6 +132,7 @@ test("unsupported, empty, corrupt, multiple, large, and long imports recover wit
   page,
 }) => {
   await page.goto("./");
+  await page.getByRole("button", { name: "고급 편집", exact: true }).click();
   await page.getByLabel("음악 파일 선택", { exact: true }).setInputFiles(wav);
   await expect(page.locator(".filename")).toHaveText(wav.name);
   const invalidFiles = [
@@ -200,6 +204,7 @@ test("worker failure displays a recoverable error", async ({ page }) => {
     } as unknown as typeof Worker;
   });
   await page.goto("./");
+  await page.getByRole("button", { name: "고급 편집", exact: true }).click();
   await page.getByLabel("음악 파일 선택", { exact: true }).setInputFiles(wav);
   await expect(page.getByRole("alert")).toContainText(
     "파형 작업을 시작할 수 없습니다",
@@ -214,7 +219,9 @@ test("mobile layout fits, refresh under project subpath works, no fake analysis"
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("./");
+  await page.getByRole("button", { name: "고급 편집", exact: true }).click();
   await page.reload();
+  await page.getByRole("button", { name: "고급 편집", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "파일 선택", exact: true }),
   ).toBeVisible();

@@ -83,6 +83,7 @@ for (const format of ["wav", "mp3"] as const) {
       };
     });
     await page.goto("./");
+    await page.getByRole("button", { name: "고급 편집", exact: true }).click();
     expect(
       requests.some(
         (url) =>
@@ -225,6 +226,7 @@ test("actual polyphonic C major chord detects simultaneous C4/E4/G4", async ({
   test.setTimeout(180_000);
   await observePitch(page);
   await page.goto("./");
+  await page.getByRole("button", { name: "고급 편집", exact: true }).click();
   await uploadPitch(page, 6, true);
   const result = await complete(page);
   const pitches = [...new Set(result.notes.map((note) => note.midi))];
@@ -256,6 +258,7 @@ test("30/60/180-second actual inference has bounded tensor memory, playback, scr
   test.setTimeout(600_000);
   await observePitch(page);
   await page.goto("./");
+  await page.getByRole("button", { name: "고급 편집", exact: true }).click();
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   for (const seconds of [30, 60, 180]) {
@@ -357,6 +360,7 @@ test("cancel during Pitch destroys inference, file replacement/removal discards 
   test.setTimeout(180_000);
   await observePitch(page);
   await page.goto("./");
+  await page.getByRole("button", { name: "고급 편집", exact: true }).click();
   await uploadPitch(page, 60);
   await expect(page.locator(".model-status")).toContainText(
     "AI 음표 모델 준비 완료",
@@ -407,6 +411,7 @@ test("same-origin model failure clears cache and retry restores inference while 
     route.fulfill({ status: 404, body: "not found" }),
   );
   await page.goto("./");
+  await page.getByRole("button", { name: "고급 편집", exact: true }).click();
   await uploadPitch(page, 4);
   await expect(page.locator(".analysis-error")).toContainText("AI 음표 모델", {
     timeout: 30_000,
@@ -441,6 +446,7 @@ test("no OffscreenCanvas/WebGL: actual CPU fallback inference works", async ({
     });
   });
   await page.goto("./");
+  await page.getByRole("button", { name: "고급 편집", exact: true }).click();
   await uploadPitch(page, 4);
   const result = await complete(page);
   expect(result.metadata.backend).toBe("cpu");
