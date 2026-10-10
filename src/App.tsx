@@ -147,8 +147,22 @@ function App() {
           AcaScore <span className="ai-label">AI</span>
         </a>
         <span className="topbar-caption">YOUR A CAPPELLA WORKSPACE</span>
-        <span className="privacy-pill">
-          <Icon name="shield" size={16} /> 내 기기에서만 처리
+        <span className="privacy-pill" title="내 기기에서만 처리">
+          <Icon name="shield" size={16} />
+          <span className="privacy-text">내 기기에서만 처리</span>
+        </span>
+        <span className="topbar-actions">
+          <button type="button" className="topbar-chip install" data-ys-install>
+            📲 <span className="chip-wide">앱 </span>설치
+          </button>
+          <button
+            type="button"
+            className="topbar-chip"
+            data-qr
+            aria-label="QR 코드로 접속"
+          >
+            📱 QR
+          </button>
         </span>
       </header>
       <main>

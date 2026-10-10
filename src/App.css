@@ -54,6 +54,36 @@
   border-radius: 20px;
   color: #587051;
 }
+/* 📲 앱 설치 · 📱 QR — 상단 오른쪽 */
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.topbar-chip {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  padding: 8px 13px;
+  border-radius: 20px;
+  border: 1px solid #d5ddd2;
+  background: #fff;
+  color: #264c40;
+  cursor: pointer;
+}
+.topbar-chip:hover {
+  background: #f2f6e9;
+}
+.topbar-chip.install {
+  background: #264c40;
+  border-color: #264c40;
+  color: #edf3d0;
+}
+.topbar-chip.install:hover {
+  background: #1d3d33;
+}
 main {
   max-width: 1640px;
   margin: auto;
@@ -530,6 +560,34 @@ main {
   .privacy-pill {
     padding: 7px 9px;
     font-size: 9px;
+  }
+  .topbar {
+    gap: 12px;
+  }
+  .topbar-chip {
+    font-size: 12px;
+    padding: 7px 10px;
+  }
+}
+@media (max-width: 520px) {
+  .privacy-text,
+  .chip-wide {
+    display: none;
+  }
+  .topbar-actions {
+    gap: 6px;
+  }
+  .topbar {
+    gap: 8px;
+    padding: 0 14px;
+  }
+  .brand {
+    gap: 8px;
+    font-size: 17px;
+  }
+  .brand-icon {
+    width: 34px;
+    height: 34px;
   }
   .workspace {
     grid-template-columns: minmax(0, 1fr);
