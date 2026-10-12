@@ -1144,3 +1144,14 @@ main {
     gap: 16px;
   }
 }
+/* 하단: 엽쌤 공통 저작권 · 모음집 링크 */
+.ys-credit {
+  margin: 10px 0 0;
+  color: #96a08e;
+  font-size: 11px;
+}
+.ys-credit a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

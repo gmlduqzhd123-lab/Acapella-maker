@@ -476,6 +476,12 @@ function App() {
           </span>
           <span>LOCAL FIRST · NO CLOUD UPLOAD</span>
         </footer>
+        <p className="ys-credit">
+          © 2026 엽쌤. All rights reserved. ·{" "}
+          <a href="https://gmlduqzhd123-lab.github.io/YScode/">
+            엽쌤의 다른 앱 보기 →
+          </a>
+        </p>
       </main>
       {reanalyze && (
         <ConfirmDialog
