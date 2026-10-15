@@ -5,6 +5,8 @@ import { createExportSnapshot } from "../../export/snapshot";
 import { exportNwctxt } from "../../export/nwctxt/exporter";
 import { exportFilename, exportTitle } from "../../export/filename";
 import { downloadFile } from "../../export/download";
+import { RESOLUTION_TICKS } from "../../quantization/grid";
+import { PPQ } from "../../quantization/types";
 export function QuickExport({
   notes,
   rhythm,
@@ -63,7 +65,7 @@ export function QuickExport({
           현재 음표{" "}
           <strong data-testid="quick-note-count">{notes.length}</strong>개 ·{" "}
           {rhythm.applied
-            ? `리듬 정리 적용 (${rhythm.settings.resolution === "eighth" ? "8" : "16"}분음표 기준)`
+            ? `리듬 정리 적용 (${(PPQ * 4) / RESOLUTION_TICKS[rhythm.applied.settings.resolution]}분음표 기준)`
             : "음표 수정 후 리듬 정리가 필요합니다."}
         </p>
       ) : (
@@ -96,6 +98,14 @@ export function QuickExport({
         <p role="alert" className="creation-error">
           {result.error} 고급 편집에서 음표와 박자 설정을 확인해 주세요.
         </p>
+      )}
+      {!!result.output?.report.warnings.length && (
+        <details className="creation-note">
+          <summary>NWC 내보내기 안내 {result.output.report.warnings.length}개</summary>
+          <ul>
+            {result.output.report.warnings.map((warning, index) => <li key={index}>{warning}</li>)}
+          </ul>
+        </details>
       )}
       {!!notes.length && !rhythm.applied && (
         <p className="creation-note">

@@ -64,9 +64,10 @@ export function chordTrack(
   }
   return { samples, sampleRate, duration: seconds };
 }
-export function pcmWav(input: AnalysisInput): Buffer {
+export function pcmWav(input: AnalysisInput, invertedStereo = false): Buffer {
   const { samples, sampleRate } = input,
-    bytes = samples.length * 2;
+    channels = invertedStereo ? 2 : 1,
+    bytes = samples.length * channels * 2;
   const result = Buffer.alloc(44 + bytes);
   result.write("RIFF");
   result.writeUInt32LE(36 + bytes, 4);
@@ -74,18 +75,21 @@ export function pcmWav(input: AnalysisInput): Buffer {
   result.write("fmt ", 12);
   result.writeUInt32LE(16, 16);
   result.writeUInt16LE(1, 20);
-  result.writeUInt16LE(1, 22);
+  result.writeUInt16LE(channels, 22);
   result.writeUInt32LE(sampleRate, 24);
-  result.writeUInt32LE(sampleRate * 2, 28);
-  result.writeUInt16LE(2, 32);
+  result.writeUInt32LE(sampleRate * channels * 2, 28);
+  result.writeUInt16LE(channels * 2, 32);
   result.writeUInt16LE(16, 34);
   result.write("data", 36);
   result.writeUInt32LE(bytes, 40);
-  for (let index = 0; index < samples.length; index++)
+  for (let index = 0; index < samples.length; index++) {
+    const value = Math.round(Math.max(-1, Math.min(1, samples[index])) * 32767);
     result.writeInt16LE(
-      Math.round(Math.max(-1, Math.min(1, samples[index])) * 32767),
-      44 + index * 2,
+      value,
+      44 + index * channels * 2,
     );
+    if (invertedStereo) result.writeInt16LE(-value, 46 + index * channels * 2);
+  }
   return result;
 }
 /** Directly authored plucked tones with attack, decay, release and harmonics. */

@@ -27,12 +27,14 @@ test("simple default flow, five/six target roles and mobile layout; no YouTube o
   await expect(
     page.getByRole("tab", { name: "Piano Roll", exact: true }),
   ).toHaveCount(0);
-  await page.setViewportSize({ width: 390, height: 844 });
-  expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= innerWidth + 1,
-    ),
-  ).toBe(true);
+  for (const width of [390, 360, 320]) {
+    await page.setViewportSize({ width, height: 844 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth + 1,
+      ),
+    ).toBe(true);
+  }
   await page.screenshot({
     path: "test-results/creation-mobile.png",
     fullPage: true,
@@ -94,7 +96,7 @@ for (const format of ["wav", "mp3"] as const)
       .getByLabel("초안 BPM", { exact: true })
       .count();
     if (manualTempo) {
-      await page.getByLabel("초안 BPM", { exact: true }).fill("120");
+      await page.getByLabel("초안 BPM", { exact: true }).fill(format === "wav" ? "120.9" : "120");
       await page
         .getByRole("button", { name: "BPM 적용하고 계속", exact: true })
         .click();
@@ -116,6 +118,11 @@ for (const format of ["wav", "mp3"] as const)
     expect(text).toContain("!NoteWorthyComposer(2.75)");
     expect(text).toContain("Draft Voice");
     expect(text).toContain("|Note|");
+    if (format === "wav" && manualTempo) {
+      expect(text).toContain("|Tempo:121|");
+      await page.getByText(/^NWC 내보내기 안내/).click();
+      await expect(page.getByText(/120.9 BPM을 121 BPM으로 반올림/)).toBeVisible();
+    }
     await writeFile(`test-results/simple-${format}.nwctxt`, text);
     await page.screenshot({
       path: `test-results/creation-${format}-desktop.png`,
@@ -127,6 +134,21 @@ for (const format of ["wav", "mp3"] as const)
     await expect(
       page.getByRole("tab", { name: "Piano Roll", exact: true }),
     ).toHaveAttribute("aria-selected", "true");
+    if (format === "wav") {
+      for (const [resolution, denominator] of [
+        ["quarter", 4],
+        ["thirtySecond", 32],
+      ] as const) {
+        await page.getByLabel("최소 단위", { exact: true }).selectOption(resolution);
+        await page.getByRole("button", { name: "Quantization 미리보기", exact: true }).click();
+        await page.getByRole("button", { name: "Quantization 적용", exact: true }).click();
+        await expect(page.getByTestId("quant-result")).toContainText("박자 정리 적용됨");
+        await page.getByRole("button", { name: "간편 화면", exact: true }).click();
+        await expect(page.getByRole("region", { name: "초안 확인 및 다운로드" }))
+          .toContainText(`리듬 정리 적용 (${denominator}분음표 기준)`);
+        await page.getByRole("button", { name: "음표 수정하기", exact: true }).click();
+      }
+    }
     await page.getByRole("button", { name: "전체 보기", exact: true }).click();
     const note = page.locator(".pr-note").first();
     await note.click();

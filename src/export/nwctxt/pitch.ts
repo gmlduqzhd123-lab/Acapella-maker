@@ -49,8 +49,12 @@ export function accidentalPitch(
   state: Map<number, number>,
 ): NwcPitch {
   const spelling = spellPitch(midi, key);
+  // NWC carries an accidental across ALL octaves of the letter until the bar
+  // line. Tracking a diatonic position instead silently changes e.g. C#4, C5
+  // into C#4, C#5 during native playback. Emit the necessary natural explicitly.
+  const scope = letters.indexOf(spelling.letter);
   const previous =
-    state.get(spelling.diatonic) ?? key.accidentals[spelling.letter];
+    state.get(scope) ?? key.accidentals[spelling.letter];
   const accidental =
     previous === spelling.alter
       ? ""
@@ -59,7 +63,7 @@ export function accidentalPitch(
         : spelling.alter < 0
           ? "b"
           : "#";
-  state.set(spelling.diatonic, spelling.alter);
+  state.set(scope, spelling.alter);
   return {
     noteId,
     midi,

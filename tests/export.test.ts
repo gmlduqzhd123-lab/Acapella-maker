@@ -286,6 +286,38 @@ test("NWC 2.75 header/footer, SongInfo/Tempo/Key/TimeSig/Clef/Rest/Bar and withi
     true,
   );
 });
+test("NWC accidentals carry across octaves, are cancelled explicitly, and reset at barlines", () => {
+  const snapshot = fixtureSnapshot([
+    exportNote("sharp", 0, 0.5, 61),
+    exportNote("upper-natural", 0.5, 0.5, 72),
+    exportNote("lower-sharp", 1, 0.5, 61),
+    exportNote("bar-natural", 2, 0.5, 72),
+  ]);
+  const result = exportNwctxt(snapshot);
+  const positions = result.text.split(/\r?\n/)
+    .filter(line => line.startsWith("|Note|"))
+    .map(line => parseNwcLine(line).props.Pos);
+  assert.deepEqual(positions, ["#-6", "n1", "#-6", "1"]);
+  assert.equal(validateNwctxt(result.text.replace("Pos:n1", "Pos:1"), result.document, snapshot).valid, false);
+  const chord = exportNwctxt(fixtureSnapshot([
+    exportNote("lower", 0, 0.5, 61), exportNote("upper", 0, 0.5, 72),
+  ]));
+  assert.match(chord.text, /\|Chord\|Dur:4th\|Pos:#-6,n1/);
+});
+test("NWC explicitly rounds fractional tempo while source snapshot and MIDI preserve precise tempo", () => {
+  for (const bpm of [92.4, 120.9, 92.5]) {
+    const snapshot = fixtureSnapshot([exportNote()], { ...exportSettings, bpm });
+    const source = structuredClone(snapshot);
+    const result = exportNwctxt(snapshot);
+    assert.equal(result.document.bpm, Math.round(bpm));
+    assert.match(result.text, new RegExp(`\\|Tempo\\|Base:Quarter\\|Tempo:${Math.round(bpm)}\\|`));
+    assert.ok(result.report.warnings.some(w => w.includes(`${bpm} BPM`) && w.includes("반올림")));
+    assert.deepEqual(snapshot, source);
+    const midi = new Midi(exportMidi(snapshot));
+    assert.ok(Math.abs(midi.header.tempos[0].bpm - bpm) < 0.001);
+    assert.equal(validateNwctxt(result.text.replace(`Tempo:${Math.round(bpm)}|`, `Tempo:${Math.round(bpm) + 1}|`), result.document, snapshot).valid, false);
+  }
+});
 test("equal onset/duration C4/E4/G4 becomes chord; asynchronous overlap becomes deterministic lanes with no ID loss", () => {
   const snapshot = fixtureSnapshot([
     exportNote("c", 0, 0.5, 60),

@@ -1155,3 +1155,14 @@ main {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+@media (max-width: 360px) {
+  .topbar {
+    height: auto;
+    min-height: 70px;
+    flex-wrap: wrap;
+    padding-block: 12px;
+  }
+  .topbar-actions {
+    margin-left: auto;
+  }
+}

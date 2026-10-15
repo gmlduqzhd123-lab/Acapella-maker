@@ -34,7 +34,7 @@ export function validateNwctxt(
   if (satb && document.staffs.length !== satb.groups.length)
     fail("SATB staff count");
   if (
-    document.bpm !== snapshot.bpm ||
+    document.bpm !== Math.round(snapshot.bpm) ||
     document.timeSignature !== snapshot.timeSignature ||
     document.tempoBase !==
       (snapshot.timeSignature === "6/8" && snapshot.bpmUnit === "dottedQuarter"
@@ -269,10 +269,11 @@ export function validateNwctxt(
           continue;
         }
         const pos = Number(match[2]),
-          natural = positionToMidi(pos, staff.clef, 0);
+          natural = positionToMidi(pos, staff.clef, 0),
+          accidentalScope = ((natural.diatonic % 7) + 7) % 7;
         const alter = match[1]
           ? ({ "#": 1, b: -1, n: 0, x: 2, v: -2 }[match[1]] ?? 0)
-          : (accidentalState.get(natural.diatonic) ??
+          : (accidentalState.get(accidentalScope) ??
             staff.key.accidentals[natural.letter]);
         const resolved = positionToMidi(pos, staff.clef, alter).midi;
         if (
@@ -283,7 +284,7 @@ export function validateNwctxt(
         )
           fail("Pos 음역/중복");
         occupied.add(pos);
-        accidentalState.set(natural.diatonic, alter);
+        accidentalState.set(accidentalScope, alter);
         const pitch = expected?.pitches[index];
         if (
           !pitch ||

@@ -146,6 +146,7 @@ export function QuickWorkspace({
                 type="number"
                 min={40}
                 max={240}
+                step="any"
                 required
                 value={tempo}
                 onChange={(e) => setTempo(e.target.value)}

@@ -136,6 +136,11 @@ export function buildNwcDocument(
   const warnings = [
     ...new Set(snapshot.quantization.issues.map((issue) => issue.message)),
   ];
+  const nwcBpm = Math.round(snapshot.bpm);
+  if (nwcBpm !== snapshot.bpm)
+    warnings.push(
+      `NWC 템포는 정수로 저장되어 ${snapshot.bpm} BPM을 ${nwcBpm} BPM으로 반올림했습니다. 원본 분석값과 MIDI 템포는 유지됩니다.`,
+    );
   if (!snapshot.key)
     warnings.push(
       "조성이 미지정되어 무조표와 임시표로 기록했습니다. 조성을 직접 확인해 주세요.",
@@ -150,7 +155,7 @@ export function buildNwcDocument(
   return {
     ...(satb ? { voiceMode: "satb" as const } : {}),
     title: snapshot.title,
-    bpm: snapshot.bpm,
+    bpm: nwcBpm,
     tempoBase:
       snapshot.timeSignature === "6/8" && snapshot.bpmUnit === "dottedQuarter"
         ? "Quarter Dotted"

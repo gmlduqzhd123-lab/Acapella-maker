@@ -4,6 +4,20 @@ import { makeMp3, makeWav } from "./fixtures";
 import type { Page } from "@playwright/test";
 import type { PitchResult } from "../src/pitch/pitchTypes";
 const melody = pitchTrack();
+test("polarity-inverted stereo WAV remains audible to real Basic Pitch after analysis downmix", async ({ page }) => {
+  test.setTimeout(180_000);
+  await observePitch(page);
+  await page.goto("./");
+  await page.getByRole("button", { name: "고급 편집", exact: true }).click();
+  await page.getByLabel("음악 파일 선택", { exact: true }).setInputFiles({
+    name: "inverted-stereo.wav", mimeType: "audio/wav", buffer: pcmWav(melody, true),
+  });
+  await expect(page.locator(".filename")).toHaveText("inverted-stereo.wav");
+  await page.getByRole("button", { name: "음악 분석 시작", exact: true }).click();
+  const result = await complete(page);
+  for (const midi of [60, 64, 67, 72]) expect(result.notes.some(note => note.midi === midi)).toBe(true);
+  console.log(JSON.stringify({ invertedStereoPitch: true, notes: result.notes.length, midi: result.notes.map(n => n.midi) }));
+});
 async function observePitch(page: Page) {
   await page.addInitScript(() => {
     const Native = window.Worker;

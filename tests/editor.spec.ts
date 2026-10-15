@@ -114,6 +114,20 @@ test("real WAV inference → Piano Roll → drag/resize/inspector/add/delete/his
     beforeLeft - 0.2,
     2,
   );
+  // Extending the left edge of an end-aligned note must keep its right edge.
+  await page.getByLabel("길이 (초)", { exact: true }).fill("0.5");
+  await page.getByLabel("시작 (초)", { exact: true }).fill("9");
+  await page.getByLabel("길이 (초)", { exact: true }).fill("1");
+  await drag(page, first, -initialZoom, 0, "left");
+  expect(Number(await first.getAttribute("data-start"))).toBeCloseTo(8, 2);
+  expect(Number(await first.getAttribute("data-duration"))).toBeCloseTo(2, 2);
+  expect(
+    Number(await first.getAttribute("data-start")) +
+      Number(await first.getAttribute("data-duration")),
+  ).toBeCloseTo(10, 5);
+  await page.getByRole("button", { name: "↶ 실행 취소", exact: true }).click();
+  await expect(first).toHaveAttribute("data-start", "9");
+  await expect(first).toHaveAttribute("data-duration", "1");
   await page.getByLabel("MIDI 음높이", { exact: true }).fill("62");
   await expect(first).toHaveAttribute("data-midi", "62");
   await page.getByLabel("시작 (초)", { exact: true }).fill("1.501");
@@ -292,11 +306,14 @@ test("real MP3 Piano Roll, mobile selection/inspector and scroll without page ov
   await page.locator('.pr-note[data-midi="60"]').first().tap();
   await page.getByLabel("MIDI 음높이", { exact: true }).fill("61");
   await expect(page.getByTestId("selected-pitch")).toHaveText("C♯4");
-  expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= innerWidth,
-    ),
-  ).toBe(true);
+  for (const width of [390, 360, 320]) {
+    await page.setViewportSize({ width, height: 844 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  }
   await page.locator(".pr-viewport").evaluate((element) => {
     element.scrollTop += 100;
     element.scrollLeft = 100;

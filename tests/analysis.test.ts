@@ -112,6 +112,20 @@ test("silence and a single sine wave do not produce fabricated BPM or key", () =
   assert.equal(tone.key, null);
   assert.deepEqual(tone.notes, []);
 });
+test("audible polarity-inverted stereo must not turn into silence during analysis downmix", async () => {
+  const left = Float32Array.from(chordTrack().samples);
+  const right = left.map(value => -value);
+  const prepared = await createAnalysisInput({
+    length: left.length, numberOfChannels: 2, sampleRate: 22050,
+    duration: left.length / 22050, getChannelData: index => index ? right : left,
+  }, new AbortController().signal);
+  const result = analyzeMusic(prepared);
+  assert.ok(result.bpm !== null && Math.abs(result.bpm - 120) < 2);
+  assert.equal(result.key?.tonic, 0);
+  assert.equal(result.key?.mode, "major");
+  assert.deepEqual(prepared.samples, left);
+  assert.deepEqual(right, left.map(value => -value));
+});
 test("BPM/Key intermediate result preserves empty notes; progress is monotonic 0–1; manual values override automatic score inputs", () => {
   const steps: AnalysisProgress[] = [];
   const result = analyzeMusic(chordTrack(), (progress) => steps.push(progress));

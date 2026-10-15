@@ -123,3 +123,22 @@ test("history capped at 50; new edit clears redo; unchanged edit adds no history
   });
   assert.equal(next, state);
 });
+test("left resize at the audio end preserves the fixed right edge and one-step undo", () => {
+  const source = [{ ...original[0], start: 9, duration: 1 }];
+  let state = initializeEditor(source);
+  state = editorReducer(state, {
+    type: "update",
+    id: source[0].id,
+    patch: { start: 8, duration: 2 },
+    duration: 10,
+  });
+  assert.equal(state.notes[0].start, 8);
+  assert.equal(state.notes[0].duration, 2);
+  assert.equal(state.notes[0].start + state.notes[0].duration, 10);
+  assert.equal(state.past.length, 1);
+  state = editorReducer(state, { type: "undo" });
+  assert.deepEqual(state.notes, source);
+  state = editorReducer(state, { type: "redo" });
+  assert.equal(state.notes[0].start + state.notes[0].duration, 10);
+  assert.equal(source[0].start, 9);
+});

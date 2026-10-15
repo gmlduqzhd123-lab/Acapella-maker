@@ -1,6 +1,6 @@
 import type { EditorSnapshot, EditorState } from "./editorTypes";
 import type { NoteEvent } from "../music/types";
-import { constrainNote, sameNotes, sortNotes } from "./noteMath.ts";
+import { clamp, constrainNote, sameNotes, sortNotes } from "./noteMath.ts";
 export const HISTORY_LIMIT = 50;
 export function initializeEditor(notes: NoteEvent[], counter = 0): EditorState {
   return {
@@ -154,8 +154,16 @@ export function editorReducer(
   const existing = state.notes.find((note) => note.id === action.id);
   if (!existing || !(action.duration > 0)) return state;
   const patch = { ...action.patch };
-  if (patch.duration !== undefined)
-    patch.duration = Math.min(patch.duration, action.duration - existing.start);
+  if (patch.duration !== undefined) {
+    const requestedStart = patch.start ?? existing.start;
+    const start = clamp(
+      Number.isFinite(requestedStart) ? requestedStart : 0,
+      0,
+      action.duration,
+    );
+    // A left resize changes start and duration together; use its new left edge.
+    patch.duration = Math.min(patch.duration, action.duration - start);
+  }
   const note = constrainNote(
     { ...existing, ...patch },
     action.duration,
